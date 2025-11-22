@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   FolderOpen,
   Plus,
@@ -15,7 +16,6 @@ import {
   AlertCircle,
   Loader2,
   Globe,
-  ChevronDown,
   Calendar,
   Tag,
   FileText,
@@ -23,6 +23,9 @@ import {
   Hash,
   Smile,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+import BackendHeader from "@/components/backend/header";
+import { Footer } from "@/components/backend/footer";
 
 // ============================================
 // TYPES
@@ -41,6 +44,65 @@ interface Category {
 interface Stats {
   total: number;
   totalWebsites: number;
+}
+
+// ============================================
+// ICON HELPER
+// ============================================
+function formatIconName(iconName: string | null) {
+  if (!iconName) return "";
+  return iconName
+    .split(/[-_\s]+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+function isLucideComponent(entry: unknown): entry is LucideIcon {
+  if (typeof entry === "function") return true;
+
+  if (
+    entry &&
+    typeof entry === "object" &&
+    "render" in entry &&
+    typeof (entry as { render?: unknown }).render === "function"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function CategoryIcon({
+  iconName,
+  className = "w-5 h-5 text-purple-600 dark:text-purple-400",
+  fallbackClassName = "w-5 h-5 text-purple-600 dark:text-purple-400",
+}: {
+  iconName: string | null;
+  className?: string;
+  fallbackClassName?: string;
+}) {
+  const formattedName = formatIconName(iconName);
+  const lucideEntry = formattedName
+    ? (LucideIcons as Record<string, unknown>)[formattedName]
+    : null;
+
+  const IconComponent = isLucideComponent(lucideEntry)
+    ? (lucideEntry as LucideIcon)
+    : null;
+
+  if (IconComponent) {
+    return <IconComponent className={className} />;
+  }
+
+  if (iconName) {
+    return (
+      <span className="text-sm font-semibold text-purple-600 dark:text-purple-300">
+        {iconName}
+      </span>
+    );
+  }
+
+  return <FolderOpen className={fallbackClassName} />;
 }
 
 // ============================================
@@ -454,10 +516,12 @@ function DetailModal({
       <div className="p-6">
         {/* Header Info */}
         <div className="flex items-start gap-4 mb-6">
-          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0 text-2xl">
-            {category.icon || (
-              <FolderOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-            )}
+          <div className="w-16 h-16 rounded-xl bg-linear-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0 text-2xl">
+            <CategoryIcon
+              iconName={category.icon}
+              className="w-8 h-8 text-purple-600 dark:text-purple-400"
+              fallbackClassName="w-8 h-8 text-purple-600 dark:text-purple-400"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
@@ -496,9 +560,14 @@ function DetailModal({
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
               Icon
             </p>
-            <p className="font-medium text-gray-900 dark:text-white text-lg">
-              {category.icon || "-"}
-            </p>
+            <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white text-lg">
+              <CategoryIcon
+                iconName={category.icon}
+                className="w-6 h-6"
+                fallbackClassName="w-6 h-6 text-purple-600 dark:text-purple-400"
+              />
+              <span>{category.icon || "-"}</span>
+            </div>
           </div>
         </div>
 
@@ -721,6 +790,7 @@ export default function KelolaCategoryClient() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <BackendHeader pageName="Kelola Kategori" />
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -854,10 +924,12 @@ export default function KelolaCategoryClient() {
                       {/* Category Info */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0 text-lg">
-                            {category.icon || (
-                              <FolderOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            )}
+                          <div className="w-10 h-10 rounded-lg bg-linear-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0 text-lg">
+                            <CategoryIcon
+                              iconName={category.icon}
+                              className="w-5 h-5 text-purple-600 dark:text-purple-400"
+                              fallbackClassName="w-5 h-5 text-purple-600 dark:text-purple-400"
+                            />
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white">
@@ -918,6 +990,9 @@ export default function KelolaCategoryClient() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Modals */}
       <CategoryFormModal

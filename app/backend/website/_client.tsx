@@ -27,6 +27,8 @@ import {
   RefreshCw,
   Tag,
 } from "lucide-react";
+import BackendHeader from "@/components/backend/header";
+import { Footer } from "@/components/backend/footer";
 
 // ============================================
 // TYPES
@@ -935,6 +937,7 @@ export default function KelolaWebsitesClient() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <BackendHeader pageName="Kelola Website" />
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -1217,6 +1220,9 @@ export default function KelolaWebsitesClient() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Modals */}
       <WebsiteFormModal

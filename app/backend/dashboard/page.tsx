@@ -5,18 +5,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Building2,
-  LogOut,
-  User,
-  Globe,
-  LayoutDashboard,
-  Settings,
-  Loader2,
-} from "lucide-react";
+import { Globe, LayoutDashboard, Loader2, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthUser } from "@/lib/types";
+import BackendHeader from "@/components/backend/header";
+import { Footer } from "@/components/backend/footer";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -73,56 +66,14 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 shadow-lg">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                  Portal Website
-                </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">
-                  Dashboard
-                </p>
-              </div>
-            </Link>
-
-            {/* Actions */}
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <User className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {user?.name || user?.email}
-                </span>
-                <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
-                  {user?.role}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="border-gray-300 dark:border-gray-600">
-                {isLoggingOut ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Keluar
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <BackendHeader
+        userName={user?.name}
+        userEmail={user?.email}
+        userRole={user?.role}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        pageName="Dashboard"
+      />
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Welcome Card */}
@@ -204,7 +155,9 @@ export default function DashboardPage() {
           Menu Cepat
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all">
+          <button
+            onClick={() => router.push("/backend/website")}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
             <Globe className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-3" />
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
               Kelola Website
@@ -214,7 +167,9 @@ export default function DashboardPage() {
             </p>
           </button>
 
-          <button className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all">
+          <button
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+            onClick={() => router.push("/backend/category")}>
             <LayoutDashboard className="w-8 h-8 text-green-600 dark:text-green-400 mb-3" />
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
               Kelola Kategori
@@ -224,7 +179,7 @@ export default function DashboardPage() {
             </p>
           </button>
 
-          <button className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all">
+          <button className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
             <User className="w-8 h-8 text-amber-600 dark:text-amber-400 mb-3" />
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
               Kelola Pengguna
@@ -234,7 +189,7 @@ export default function DashboardPage() {
             </p>
           </button>
 
-          <button className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all">
+          <button className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
             <Settings className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-3" />
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
               Pengaturan
@@ -247,13 +202,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 dark:border-gray-700 mt-8">
-        <div className="container mx-auto px-4 py-6">
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            © {new Date().getFullYear()} Dinas Kominfo Kabupaten Merauke
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
