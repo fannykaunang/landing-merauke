@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/contexts/auth-context";
 
 type Step = "email" | "otp" | "success";
 
@@ -29,6 +30,7 @@ interface FormError {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -38,6 +40,22 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    const logVisit = async () => {
+      try {
+        await fetch("/api/visitor-logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentUrl: window.location.href }),
+        });
+      } catch (err) {
+        console.error("Failed to record visitor log:", err);
+      }
+    };
+
+    logVisit();
+  }, []);
 
   // Fetch CSRF token on mount
   const fetchCSRFToken = useCallback(async () => {
@@ -213,6 +231,7 @@ export default function LoginPage() {
         return;
       }
 
+      await refreshUser();
       setStep("success");
 
       // Redirect after success

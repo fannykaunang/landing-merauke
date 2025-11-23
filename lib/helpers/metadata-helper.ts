@@ -52,7 +52,7 @@ export async function generatePageMetadata(
     // Images
     const ogImage =
       options.image || settings?.og_image || "/images/og-default.png";
-    const logoUrl = settings?.logo || "/images/logo-default.png";
+    const logoUrl = settings?.logo || "/images/logo-merauke.png";
     const faviconUrl = settings?.favicon || "/favicon.ico";
 
     // Keywords

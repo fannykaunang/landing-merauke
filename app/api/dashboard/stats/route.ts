@@ -70,7 +70,7 @@ export async function GET() {
         created_at: string;
       }>
     >(`
-      SELECT 
+      SELECT
         id,
         title,
         url,
@@ -79,6 +79,23 @@ export async function GET() {
       WHERE is_active = 1
       ORDER BY created_at DESC
       LIMIT 5
+    `);
+
+    // Get website visit counts (top 7 by clicks)
+    const websiteVisitStats = await query<
+      Array<{
+        website_title: string;
+        total_clicks: number;
+      }>
+    >(`
+      SELECT
+        w.title AS website_title,
+        COUNT(wl.ID) AS total_clicks
+      FROM website_logs wl
+      JOIN websites w ON wl.WebsiteID = w.id
+      GROUP BY w.id, w.title
+      ORDER BY total_clicks DESC
+      LIMIT 7
     `);
 
     return NextResponse.json({
@@ -93,6 +110,7 @@ export async function GET() {
         },
         websitesByCategory,
         recentWebsites,
+        websiteVisitStats,
       },
     });
   } catch (error) {

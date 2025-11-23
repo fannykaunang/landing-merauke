@@ -15,6 +15,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 // ============================================
 // TYPES
@@ -37,6 +46,11 @@ interface RecentWebsite {
   title: string;
   url: string;
   created_at: string;
+}
+
+interface WebsiteVisitStat {
+  website_title: string;
+  total_clicks: number;
 }
 
 // ============================================
@@ -114,6 +128,9 @@ export default function DashboardPage() {
     WebsiteByCategory[]
   >([]);
   const [recentWebsites, setRecentWebsites] = useState<RecentWebsite[]>([]);
+  const [websiteVisitStats, setWebsiteVisitStats] = useState<
+    WebsiteVisitStat[]
+  >([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Fetch dashboard stats
@@ -128,6 +145,7 @@ export default function DashboardPage() {
           setStats(data.data.stats);
           setWebsitesByCategory(data.data.websitesByCategory || []);
           setRecentWebsites(data.data.recentWebsites || []);
+          setWebsiteVisitStats(data.data.websiteVisitStats || []);
         } else {
           console.error("Failed to fetch stats:", data.error);
         }
@@ -371,6 +389,64 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Website Visit Chart */}
+        <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Grafik Kunjungan Website
+          </h2>
+          {isLoadingStats ? (
+            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Memuat data grafik...</span>
+            </div>
+          ) : websiteVisitStats.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Belum ada data kunjungan website.
+            </p>
+          ) : (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={websiteVisitStats}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                  <XAxis
+                    dataKey="website_title"
+                    angle={-25}
+                    textAnchor="end"
+                    height={70}
+                    tick={{ fill: "currentColor" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: "currentColor" }}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
+                      border: "none",
+                      color: "#f9fafb",
+                    }}
+                    itemStyle={{ color: "#f9fafb" }}
+                    labelStyle={{ color: "#f9fafb" }}
+                    formatter={(value: number) => [
+                      `${value} klik`,
+                      "Jumlah Kunjungan",
+                    ]}
+                  />
+                  <Bar
+                    dataKey="total_clicks"
+                    fill="#2563eb"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

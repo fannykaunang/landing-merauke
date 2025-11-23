@@ -1,3 +1,5 @@
+// app/page.tsx
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -18,6 +20,22 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalWebsites, setTotalWebsites] = useState(0);
+
+  useEffect(() => {
+    const logVisit = async () => {
+      try {
+        await fetch("/api/visitor-logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentUrl: window.location.href }),
+        });
+      } catch (error) {
+        console.error("Error logging visit:", error);
+      }
+    };
+
+    logVisit();
+  }, []);
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {

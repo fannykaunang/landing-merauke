@@ -1,3 +1,5 @@
+// components/website-grid.tsx
+
 "use client";
 
 import { Globe, RefreshCw } from "lucide-react";
@@ -30,8 +32,7 @@ export function WebsiteGrid({
     return (
       <section
         id="website"
-        className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50"
-      >
+        className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <Skeleton className="h-10 w-80 mx-auto mb-4" />
@@ -41,8 +42,7 @@ export function WebsiteGrid({
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden"
-              >
+                className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
                 <Skeleton className="h-48 w-full" />
                 <div className="p-5">
                   <Skeleton className="h-4 w-20 mb-3" />
@@ -69,13 +69,12 @@ export function WebsiteGrid({
     return (
       <section
         id="website"
-        className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50"
-      >
+        className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Daftar{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600">
                 Website & Aplikasi
               </span>
             </h2>
@@ -97,8 +96,7 @@ export function WebsiteGrid({
             <Button
               variant="outline"
               onClick={() => onPageChange(1)}
-              className="border-gray-300 dark:border-gray-600"
-            >
+              className="border-gray-300 dark:border-gray-600">
               <RefreshCw className="w-4 h-4 mr-2" />
               Reset Pencarian
             </Button>
@@ -111,13 +109,12 @@ export function WebsiteGrid({
   return (
     <section
       id="website"
-      className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50"
-    >
+      className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Daftar{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600">
               Website & Aplikasi
             </span>
           </h2>
@@ -141,8 +138,7 @@ export function WebsiteGrid({
               variant="outline"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="border-gray-300 dark:border-gray-600"
-            >
+              className="border-gray-300 dark:border-gray-600">
               Sebelumnya
             </Button>
 
@@ -168,10 +164,9 @@ export function WebsiteGrid({
                         onClick={() => onPageChange(page)}
                         className={`w-10 h-10 ${
                           currentPage === page
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0"
+                            ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white border-0"
                             : "border-gray-300 dark:border-gray-600"
-                        }`}
-                      >
+                        }`}>
                         {page}
                       </Button>
                     </div>
@@ -183,8 +178,7 @@ export function WebsiteGrid({
               variant="outline"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="border-gray-300 dark:border-gray-600"
-            >
+              className="border-gray-300 dark:border-gray-600">
               Selanjutnya
             </Button>
           </div>

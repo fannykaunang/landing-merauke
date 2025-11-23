@@ -1,6 +1,9 @@
+// components/website-card.tsx
+
 "use client";
 
 import Image from "next/image";
+import { MouseEvent, useCallback } from "react";
 import {
   ExternalLink,
   Star,
@@ -31,17 +34,40 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 export function WebsiteCard({ website }: WebsiteCardProps) {
-  const IconComponent =
-    iconMap[website.category_icon || ""] || LayoutGrid;
+  const IconComponent = iconMap[website.category_icon || ""] || LayoutGrid;
   const tags = website.tags ? JSON.parse(website.tags) : [];
   const isFeatured = website.featured === 1 || website.featured === true;
+
+  const handleVisit = useCallback(
+    async (event: MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+
+      try {
+        await fetch("/api/website-logs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            websiteId: website.id,
+            currentUrl: window.location.href,
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to log website visit", error);
+      }
+
+      window.open(website.url, "_blank", "noopener,noreferrer");
+    },
+    [website.id, website.url]
+  );
 
   return (
     <Card className="group relative overflow-hidden border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50 transition-all duration-300 hover:-translate-y-1">
       {/* Featured Badge */}
       {isFeatured && (
         <div className="absolute top-4 right-4 z-10">
-          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
+          <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
             <Star className="w-3 h-3 mr-1 fill-current" />
             Featured
           </Badge>
@@ -49,7 +75,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
       )}
 
       {/* Image */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+      <div className="relative h-48 overflow-hidden bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
         {website.image_url ? (
           <Image
             src={website.image_url}
@@ -64,7 +90,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
           </div>
         )}
         {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       <CardContent className="p-5">
@@ -97,16 +123,14 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
               <Badge
                 key={index}
                 variant="secondary"
-                className="text-xs font-normal bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
+                className="text-xs font-normal bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
                 {tag}
               </Badge>
             ))}
             {tags.length > 3 && (
               <Badge
                 variant="secondary"
-                className="text-xs font-normal bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-              >
+                className="text-xs font-normal bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                 +{tags.length - 3}
               </Badge>
             )}
@@ -115,10 +139,13 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
 
         {/* Action Button */}
         <Button
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300"
-          asChild
-        >
-          <a href={website.url} target="_blank" rel="noopener noreferrer">
+          className="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300"
+          asChild>
+          <a
+            href={website.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleVisit}>
             <span>Kunjungi Website</span>
             <ExternalLink className="w-4 h-4 ml-2" />
           </a>

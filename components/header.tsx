@@ -88,14 +88,14 @@ export function Header() {
               <Link href="/login">Masuk</Link>
             </Button>
             <Button
-              className="hidden md:flex bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25"
+              className="hidden md:flex bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25"
               asChild>
               <a
-                href="https://merauke.go.id"
+                href="https://portal.merauke.go.id"
                 target="_blank"
                 rel="noopener noreferrer">
-                <Globe className="w-4 h-4 mr-2" />
-                merauke.go.id
+                <Globe className="w-4 h-4 mr-0" />
+                Portal Berita
               </a>
             </Button>
 
