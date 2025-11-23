@@ -1,11 +1,12 @@
 // app/(dashboard)/settings/app/page.tsx
+
 import { generatePageMetadata } from "@/lib/helpers/metadata-helper";
 import SettingsPageClient from "./_client";
 
 export async function generateMetadata() {
   return generatePageMetadata({
     title: "Pengaturan",
-    path: "/settings/app",
+    path: "/backend/settings",
     noIndex: true,
   });
 }

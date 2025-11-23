@@ -1,51 +1,26 @@
 // app/api/categories/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import { Category } from "@/lib/types";
-
-// Helper function to generate slug
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+import {
+  createCategory,
+  deleteCategoryById,
+  generateCategorySlug,
+  getCategoryById,
+  getCategories,
+  getCategoryWebsiteCount,
+  isCategorySlugExists,
+  updateCategory,
+} from "@/lib/models/category-model";
 
 // GET - Fetch all categories
 export async function GET() {
   try {
-    const categories = await query<Category[]>(`
-      SELECT 
-        c.*,
-        COUNT(w.id) as website_count
-      FROM categories c
-      LEFT JOIN websites w ON c.id = w.category_id AND w.is_active = 1
-      GROUP BY c.id
-      ORDER BY c.name ASC
-    `);
-
-    // Get statistics
-    const statsResult = await query<
-      [{ total: number; total_websites: number }]
-    >(`
-      SELECT 
-        COUNT(DISTINCT c.id) as total,
-        COUNT(w.id) as total_websites
-      FROM categories c
-      LEFT JOIN websites w ON c.id = w.category_id AND w.is_active = 1
-    `);
-    const stats = statsResult[0] || { total: 0, total_websites: 0 };
+    const { categories, stats } = await getCategories();
 
     return NextResponse.json({
       success: true,
       data: categories,
-      stats: {
-        total: stats.total,
-        totalWebsites: stats.total_websites,
-      },
+      stats,
     });
   } catch (error) {
     console.error("Error fetching categories:", error);
@@ -74,15 +49,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate slug if not provided
-    const finalSlug = slug || generateSlug(name);
+    const finalSlug = slug || generateCategorySlug(name);
 
-    // Check if slug already exists
-    const existing = await query<Category[]>(
-      "SELECT id FROM categories WHERE slug = ?",
-      [finalSlug]
-    );
-
-    if (existing.length > 0) {
+    const slugExists = await isCategorySlugExists(finalSlug);
+    if (slugExists) {
       return NextResponse.json(
         { success: false, error: "Slug sudah digunakan, gunakan slug lain" },
         { status: 400 }
@@ -90,18 +60,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new category
-    const result = await query<{ insertId: number }>(
-      `
-      INSERT INTO categories (name, slug, description, icon, created_at, updated_at)
-      VALUES (?, ?, ?, ?, NOW(), NOW())
-    `,
-      [name, finalSlug, description || null, icon || null]
-    );
+    const insertId = await createCategory({
+      name,
+      slug: finalSlug,
+      description,
+      icon,
+    });
 
     return NextResponse.json({
       success: true,
       message: "Kategori berhasil ditambahkan",
-      data: { id: (result as any).insertId },
+      data: { id: insertId },
     });
   } catch (error) {
     console.error("Error creating category:", error);
@@ -134,28 +103,19 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if category exists
-    const existing = await query<Category[]>(
-      "SELECT id FROM categories WHERE id = ?",
-      [id]
-    );
+    const existing = await getCategoryById(id);
 
-    if (existing.length === 0) {
+    if (!existing) {
       return NextResponse.json(
         { success: false, error: "Kategori tidak ditemukan" },
         { status: 404 }
       );
     }
 
-    // Generate slug if not provided
-    const finalSlug = slug || generateSlug(name);
+    const finalSlug = slug || generateCategorySlug(name);
 
-    // Check if slug already exists (excluding current category)
-    const slugExists = await query<Category[]>(
-      "SELECT id FROM categories WHERE slug = ? AND id != ?",
-      [finalSlug, id]
-    );
-
-    if (slugExists.length > 0) {
+    const slugExists = await isCategorySlugExists(finalSlug, id);
+    if (slugExists) {
       return NextResponse.json(
         { success: false, error: "Slug sudah digunakan, gunakan slug lain" },
         { status: 400 }
@@ -163,19 +123,13 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update category
-    await query(
-      `
-      UPDATE categories 
-      SET 
-        name = ?,
-        slug = ?,
-        description = ?,
-        icon = ?,
-        updated_at = NOW()
-      WHERE id = ?
-    `,
-      [name, finalSlug, description || null, icon || null, id]
-    );
+    await updateCategory({
+      id,
+      name,
+      slug: finalSlug,
+      description,
+      icon,
+    });
 
     return NextResponse.json({
       success: true,
@@ -206,12 +160,9 @@ export async function DELETE(request: NextRequest) {
     const categoryId = parseInt(id);
 
     // Check if category exists
-    const existing = await query<Category[]>(
-      "SELECT id FROM categories WHERE id = ?",
-      [categoryId]
-    );
+    const existing = await getCategoryById(categoryId);
 
-    if (existing.length === 0) {
+    if (!existing) {
       return NextResponse.json(
         { success: false, error: "Kategori tidak ditemukan" },
         { status: 404 }
@@ -219,23 +170,20 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if category has websites
-    const websiteCount = await query<[{ count: number }]>(
-      "SELECT COUNT(*) as count FROM websites WHERE category_id = ?",
-      [categoryId]
-    );
+    const websiteCount = await getCategoryWebsiteCount(categoryId);
 
-    if (websiteCount[0]?.count > 0) {
+    if (websiteCount > 0) {
       return NextResponse.json(
         {
           success: false,
-          error: `Tidak dapat menghapus kategori karena masih memiliki ${websiteCount[0].count} website terkait`,
+          error: `Tidak dapat menghapus kategori karena masih memiliki ${websiteCount} website terkait`,
         },
         { status: 400 }
       );
     }
 
     // Delete category
-    await query("DELETE FROM categories WHERE id = ?", [categoryId]);
+    await deleteCategoryById(categoryId);
 
     return NextResponse.json({
       success: true,

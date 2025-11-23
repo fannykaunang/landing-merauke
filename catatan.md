@@ -4,3 +4,4 @@
 
 # 23-11-2025
 1. suruh claude bikin halaman kelola users
+2. cek ulang ketika CRUD sudah include csrf token atau belum

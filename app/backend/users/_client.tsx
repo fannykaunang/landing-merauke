@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { User } from "@/lib/types";
 import {
   Users,
   Plus,
@@ -27,19 +28,6 @@ import {
 // ============================================
 // TYPES
 // ============================================
-interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  email_verified: boolean;
-  image: string | null;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
-  role: "admin" | "user";
-  last_login: string | null;
-}
-
 interface Stats {
   total: number;
   activeUsers: number;

@@ -1,4 +1,4 @@
-// app/(dashboard)/settings/app/_client.tsx
+// app/backend/settings/_client.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -94,18 +94,6 @@ interface AppSettings {
   updated_by: number | null;
 }
 
-interface LaporanSetting {
-  setting_id: number;
-  setting_key: string;
-  setting_value: string;
-  setting_type: "String" | "Number" | "Boolean" | "JSON";
-  deskripsi: string | null;
-  kategori_setting: string | null;
-  is_editable: 0 | 1;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
 const BOOLEAN_FIELDS: (keyof Pick<
   AppSettings,
   "enable_2fa" | "backup_auto" | "log_activity"
@@ -128,7 +116,6 @@ const normalizeBooleanFields = (
 type TabKey =
   | "general"
   | "contact"
-  | "integration"
   | "security"
   | "email"
   | "ui"
@@ -225,21 +212,12 @@ export default function SettingsPageClient() {
   const tabs = [
     { key: "general" as TabKey, label: "Umum", icon: Info },
     { key: "contact" as TabKey, label: "Kontak", icon: Phone },
-    { key: "integration" as TabKey, label: "Integrasi", icon: Server },
     { key: "security" as TabKey, label: "Keamanan", icon: Shield },
     { key: "email" as TabKey, label: "Email", icon: Mail },
     { key: "ui" as TabKey, label: "Tampilan", icon: Palette },
     { key: "organization" as TabKey, label: "Organisasi", icon: Building2 },
     { key: "system" as TabKey, label: "Sistem", icon: Database },
   ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -301,9 +279,6 @@ export default function SettingsPageClient() {
           )}
           {activeTab === "contact" && (
             <ContactTab formData={formData} onChange={handleInputChange} />
-          )}
-          {activeTab === "integration" && (
-            <IntegrationTab formData={formData} onChange={handleInputChange} />
           )}
           {activeTab === "security" && (
             <SecurityTab formData={formData} onChange={handleInputChange} />
@@ -605,71 +580,6 @@ function ContactTab({ formData, onChange }: any) {
   );
 }
 
-// ===== INTEGRATION TAB =====
-function IntegrationTab({ formData, onChange }: any) {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Integrasi E-NTAGO
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            URL API E-NTAGO *
-          </label>
-          <input
-            type="url"
-            value={formData.eabsen_api_url || ""}
-            onChange={(e) => onChange("eabsen_api_url", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            placeholder="https://dev.api.eabsen.merauke.go.id/api"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Interval Sinkronisasi (menit)
-          </label>
-          <input
-            type="number"
-            value={formData.eabsen_sync_interval || 60}
-            onChange={(e) =>
-              onChange("eabsen_sync_interval", parseInt(e.target.value))
-            }
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            min="1"
-          />
-        </div>
-
-        <div className="flex items-center">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.eabsen_active || false}
-              onChange={(e) => onChange("eabsen_active", e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Aktifkan Integrasi eAbsen
-            </span>
-          </label>
-        </div>
-
-        {formData.eabsen_last_sync && (
-          <div className="md:col-span-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Sinkronisasi terakhir:{" "}
-              {new Date(formData.eabsen_last_sync).toLocaleString("id-ID")}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ===== SECURITY TAB =====
 function SecurityTab({ formData, onChange }: any) {
   return (
@@ -760,10 +670,6 @@ function SecurityTab({ formData, onChange }: any) {
     </div>
   );
 }
-
-// Continue to part 3...
-// Tab Components lanjutan untuk settings-page.tsx
-// Tambahkan code ini setelah part 2
 
 // ===== EMAIL TAB =====
 function EmailTab({ formData, onChange }: any) {

@@ -1,12 +1,15 @@
 // app/backend/website/page.tsx
 
-import { Metadata } from "next";
+import { generatePageMetadata } from "@/lib/helpers/metadata-helper";
 import KelolaWebsitesClient from "./_client";
 
-export const metadata: Metadata = {
-  title: "Kelola Websites | Portal Merauke",
-  description: "Kelola semua website dan aplikasi Portal Merauke",
-};
+export async function generateMetadata() {
+  return generatePageMetadata({
+    title: "Kelola Websites",
+    path: "/backend/website",
+    noIndex: true,
+  });
+}
 
 export default function KelolaWebsitesPage() {
   return <KelolaWebsitesClient />;

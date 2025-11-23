@@ -1,7 +1,10 @@
+// lib/auth.ts
+
 import { cookies } from "next/headers";
 import { query } from "@/lib/db";
 import { User, Session, OTPCode, LoginAttempt, CSRFToken } from "@/lib/types";
 import crypto from "crypto";
+import { getSettingValue } from "@/lib/models/app-settings-model";
 
 // =====================================================
 // CONSTANTS
@@ -11,7 +14,7 @@ const CSRF_COOKIE_NAME = "csrf_token";
 const SESSION_EXPIRY_HOURS = 24;
 const OTP_EXPIRY_MINUTES = 5;
 const CSRF_EXPIRY_HOURS = 24;
-const MAX_LOGIN_ATTEMPTS = 5;
+const DEFAULT_MAX_LOGIN_ATTEMPTS = 5;
 const RATE_LIMIT_WINDOW_MINUTES = 15;
 
 // =====================================================
@@ -238,7 +241,14 @@ export async function recordLoginAttempt(
 export async function checkRateLimit(
   ipAddress: string,
   email?: string
-): Promise<{ allowed: boolean; remainingAttempts: number; retryAfter?: number }> {
+): Promise<{
+  allowed: boolean;
+  remainingAttempts: number;
+  retryAfter?: number;
+}> {
+  const maxLoginAttempts =
+    (await getSettingValue<number>("max_login_attempts")) ??
+    DEFAULT_MAX_LOGIN_ATTEMPTS;
   const windowStart = new Date(
     Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000
   );
@@ -264,8 +274,8 @@ export async function checkRateLimit(
   }
 
   const maxCount = Math.max(ipCount, emailCount);
-  const allowed = maxCount < MAX_LOGIN_ATTEMPTS;
-  const remainingAttempts = Math.max(0, MAX_LOGIN_ATTEMPTS - maxCount);
+  const allowed = maxCount < maxLoginAttempts;
+  const remainingAttempts = Math.max(0, maxLoginAttempts - maxCount);
 
   if (!allowed) {
     // Get oldest attempt to calculate retry time
@@ -281,7 +291,11 @@ export async function checkRateLimit(
       const retryAfter = Math.ceil(
         (oldestTime + RATE_LIMIT_WINDOW_MINUTES * 60 * 1000 - Date.now()) / 1000
       );
-      return { allowed, remainingAttempts, retryAfter: Math.max(0, retryAfter) };
+      return {
+        allowed,
+        remainingAttempts,
+        retryAfter: Math.max(0, retryAfter),
+      };
     }
   }
 

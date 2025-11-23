@@ -1,3 +1,5 @@
+// app/login/page.tsx
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -101,6 +103,12 @@ export default function LoginPage() {
           type: "error",
           message: data.error || "Gagal mengirim OTP",
         });
+        return;
+      }
+
+      // If email not registered, show error and stay on email step
+      if (!data?.data?.email) {
+        setError({ type: "error", message: "Email tidak terdaftar" });
         return;
       }
 
@@ -209,7 +217,7 @@ export default function LoginPage() {
 
       // Redirect after success
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/backend/dashboard");
       }, 2000);
     } catch (err) {
       console.error("OTP verify error:", err);

@@ -1,12 +1,15 @@
 // app/backend/category.page.tsx
 
-import { Metadata } from "next";
 import KelolaCategoryClient from "./_client";
+import { generatePageMetadata } from "@/lib/helpers/metadata-helper";
 
-export const metadata: Metadata = {
-  title: "Kelola Kategori | Portal Merauke",
-  description: "Kelola kategori website Portal Merauke",
-};
+export async function generateMetadata() {
+  return generatePageMetadata({
+    title: "Kelola Kategori",
+    path: "/backend/category",
+    noIndex: true,
+  });
+}
 
 export default function KelolaCategoryPage() {
   return <KelolaCategoryClient />;

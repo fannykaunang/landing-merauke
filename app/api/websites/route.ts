@@ -1,7 +1,12 @@
 // app/api/websites/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import { Website } from "@/lib/types";
+import {
+  createWebsite,
+  deleteWebsiteById,
+  getWebsiteById,
+  getWebsites,
+  updateWebsite,
+} from "@/lib/models/website-model";
 
 // GET - Fetch all websites with filters
 export async function GET(request: NextRequest) {
@@ -11,95 +16,20 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category") || "";
     const featured = searchParams.get("featured");
     const isActive = searchParams.get("is_active"); // 'all' | '1' | '0'
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = (page - 1) * limit;
 
-    let whereConditions: string[] = [];
-    const params: (string | number)[] = [];
+    const pageParam = parseInt(searchParams.get("page") || "1");
+    const limitParam = parseInt(searchParams.get("limit") || "50");
+    const page = Number.isNaN(pageParam) ? 1 : pageParam;
+    const limit = Number.isNaN(limitParam) ? 50 : limitParam;
 
-    // Search filter
-    if (search) {
-      whereConditions.push(
-        "(w.title LIKE ? OR w.description LIKE ? OR w.tags LIKE ?)"
-      );
-      const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm, searchTerm);
-    }
-
-    // Category filter
-    if (category && category !== "all") {
-      whereConditions.push("c.slug = ?");
-      params.push(category);
-    }
-
-    // Featured filter
-    if (featured === "true") {
-      whereConditions.push("w.featured = 1");
-    } else if (featured === "false") {
-      whereConditions.push("w.featured = 0");
-    }
-
-    // is_active filter
-    if (isActive && isActive !== "all") {
-      whereConditions.push("w.is_active = ?");
-      params.push(parseInt(isActive));
-    }
-
-    const whereClause =
-      whereConditions.length > 0
-        ? `WHERE ${whereConditions.join(" AND ")}`
-        : "";
-
-    // Get total count
-    const countResult = await query<[{ total: number }]>(
-      `
-      SELECT COUNT(*) as total
-      FROM websites w
-      LEFT JOIN categories c ON w.category_id = c.id
-      ${whereClause}
-    `,
-      params
-    );
-    const total = countResult[0]?.total || 0;
-
-    // Get statistics
-    const statsResult = await query<
-      [{ total: number; active: number; inactive: number; featured: number }]
-    >(
-      `
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
-        SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive,
-        SUM(CASE WHEN featured = 1 THEN 1 ELSE 0 END) as featured
-      FROM websites
-    `,
-      []
-    );
-    const stats = statsResult[0] || {
-      total: 0,
-      active: 0,
-      inactive: 0,
-      featured: 0,
-    };
-
-    // Get websites with pagination
-    const websites = await query<Website[]>(
-      `
-      SELECT 
-        w.*,
-        c.name as category_name,
-        c.slug as category_slug,
-        c.icon as category_icon
-      FROM websites w
-      LEFT JOIN categories c ON w.category_id = c.id
-      ${whereClause}
-      ORDER BY w.featured DESC, w.created_at DESC
-      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
-    `,
-      params
-    );
+    const { websites, stats, total } = await getWebsites({
+      search,
+      category,
+      featured,
+      isActive,
+      page,
+      limit,
+    });
 
     return NextResponse.json({
       success: true,
@@ -154,29 +84,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new website
-    const result = await query<{ insertId: number }>(
-      `
-      INSERT INTO websites 
-        (title, description, url, image_url, category_id, tags, featured, is_active, created_by, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-    `,
-      [
-        title,
-        description || null,
-        url,
-        image_url || null,
-        category_id || null,
-        tags || null,
-        featured ? 1 : 0,
-        is_active !== undefined ? (is_active ? 1 : 0) : 1,
-        created_by || null,
-      ]
-    );
+    const insertId = await createWebsite({
+      title,
+      description,
+      url,
+      image_url,
+      category_id,
+      tags,
+      featured,
+      is_active,
+      created_by,
+    });
 
     return NextResponse.json({
       success: true,
       message: "Website berhasil ditambahkan",
-      data: { id: (result as any).insertId },
+      data: { id: insertId },
     });
   } catch (error) {
     console.error("Error creating website:", error);
@@ -212,12 +135,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if website exists
-    const existing = await query<Website[]>(
-      "SELECT id FROM websites WHERE id = ?",
-      [id]
-    );
+    const existing = await getWebsiteById(id);
 
-    if (existing.length === 0) {
+    if (!existing) {
       return NextResponse.json(
         { success: false, error: "Website tidak ditemukan" },
         { status: 404 }
@@ -225,33 +145,17 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update website
-    await query(
-      `
-      UPDATE websites 
-      SET 
-        title = ?,
-        description = ?,
-        url = ?,
-        image_url = ?,
-        category_id = ?,
-        tags = ?,
-        featured = ?,
-        is_active = ?,
-        updated_at = NOW()
-      WHERE id = ?
-    `,
-      [
-        title,
-        description || null,
-        url,
-        image_url || null,
-        category_id || null,
-        tags || null,
-        featured ? 1 : 0,
-        is_active ? 1 : 0,
-        id,
-      ]
-    );
+    await updateWebsite({
+      id,
+      title,
+      description,
+      url,
+      image_url,
+      category_id,
+      tags,
+      featured,
+      is_active,
+    });
 
     return NextResponse.json({
       success: true,
@@ -282,12 +186,9 @@ export async function DELETE(request: NextRequest) {
     const websiteId = parseInt(id);
 
     // Check if website exists
-    const existing = await query<Website[]>(
-      "SELECT id FROM websites WHERE id = ?",
-      [websiteId]
-    );
+    const existing = await getWebsiteById(websiteId);
 
-    if (existing.length === 0) {
+    if (!existing) {
       return NextResponse.json(
         { success: false, error: "Website tidak ditemukan" },
         { status: 404 }
@@ -295,7 +196,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete website
-    await query("DELETE FROM websites WHERE id = ?", [websiteId]);
+    await deleteWebsiteById(websiteId);
 
     return NextResponse.json({
       success: true,

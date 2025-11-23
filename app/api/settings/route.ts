@@ -1,8 +1,7 @@
 // app/api/settings/app/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-//import { requireAuth } from "@/lib/helpers/auth-helper";
-import { useAuth } from "@/contexts/auth-context";
+import { getCurrentUser } from "@/lib/auth";
 import {
   getAppSettings,
   updateAppSettings,
@@ -138,10 +137,16 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    //const user = await requireAuth();
-    const { user, isLoading } = useAuth();
+    const user = await getCurrentUser();
 
-    if (user?.role !== "admin") {
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Harus login untuk mengakses" },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== "admin") {
       return NextResponse.json(
         {
           success: false,

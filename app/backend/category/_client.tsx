@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Category } from "@/lib/types";
 import type { LucideIcon } from "lucide-react";
 import {
   FolderOpen,
@@ -17,7 +18,6 @@ import {
   Loader2,
   Globe,
   Calendar,
-  Tag,
   FileText,
   RefreshCw,
   Hash,
@@ -28,17 +28,6 @@ import * as LucideIcons from "lucide-react";
 // ============================================
 // TYPES
 // ============================================
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description: string | null;
-  icon: string | null;
-  created_at: string;
-  updated_at: string;
-  website_count?: number;
-}
-
 interface Stats {
   total: number;
   totalWebsites: number;
