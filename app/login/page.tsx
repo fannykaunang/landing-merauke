@@ -40,8 +40,12 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const hasLoggedVisit = useRef(false);
 
   useEffect(() => {
+    if (hasLoggedVisit.current) return;
+    hasLoggedVisit.current = true;
+
     const logVisit = async () => {
       try {
         await fetch("/api/visitor-logs", {

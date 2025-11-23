@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Header } from "@/components/header";
 import { HeroSection } from "@/components/hero-section";
 import { CategoryFilter } from "@/components/category-filter";
@@ -20,8 +20,12 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalWebsites, setTotalWebsites] = useState(0);
+  const hasLoggedVisit = useRef(false);
 
   useEffect(() => {
+    if (hasLoggedVisit.current) return;
+    hasLoggedVisit.current = true;
+
     const logVisit = async () => {
       try {
         await fetch("/api/visitor-logs", {
