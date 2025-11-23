@@ -23,6 +23,8 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Line,
+  LineChart,
 } from "recharts";
 
 // ============================================
@@ -51,6 +53,11 @@ interface RecentWebsite {
 interface WebsiteVisitStat {
   website_title: string;
   total_clicks: number;
+}
+
+interface MonthlyVisitorStat {
+  month: string;
+  total_visitors: number;
 }
 
 // ============================================
@@ -131,6 +138,9 @@ export default function DashboardPage() {
   const [websiteVisitStats, setWebsiteVisitStats] = useState<
     WebsiteVisitStat[]
   >([]);
+  const [monthlyVisitorStats, setMonthlyVisitorStats] = useState<
+    MonthlyVisitorStat[]
+  >([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Fetch dashboard stats
@@ -146,6 +156,7 @@ export default function DashboardPage() {
           setWebsitesByCategory(data.data.websitesByCategory || []);
           setRecentWebsites(data.data.recentWebsites || []);
           setWebsiteVisitStats(data.data.websiteVisitStats || []);
+          setMonthlyVisitorStats(data.data.monthlyVisitorStats || []);
         } else {
           console.error("Failed to fetch stats:", data.error);
         }
@@ -443,6 +454,65 @@ export default function DashboardPage() {
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Monthly Visitor Chart */}
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Grafik Pengunjung Bulanan
+          </h2>
+          {isLoadingStats ? (
+            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Memuat data grafik...</span>
+            </div>
+          ) : monthlyVisitorStats.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Belum ada data pengunjung.
+            </p>
+          ) : (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={monthlyVisitorStats}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fill: "currentColor" }}
+                    tickLine={false}
+                    height={50}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: "currentColor" }}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
+                      border: "none",
+                      color: "#f9fafb",
+                    }}
+                    itemStyle={{ color: "#f9fafb" }}
+                    labelStyle={{ color: "#f9fafb" }}
+                    formatter={(value: number) => [
+                      `${value} pengunjung`,
+                      "Jumlah Pengunjung",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total_visitors"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ r: 4, strokeWidth: 2, stroke: "#065f46" }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           )}

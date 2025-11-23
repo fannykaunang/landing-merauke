@@ -98,6 +98,29 @@ export async function GET() {
       LIMIT 7
     `);
 
+    // Get monthly visitor logs (last 12 months)
+    const monthlyVisitorStatsRaw = await query<
+      Array<{
+        month_key: string;
+        month_label: string;
+        total_visitors: number;
+      }>
+    >(`
+      SELECT
+        DATE_FORMAT(created_at, '%Y-%m-01') AS month_key,
+        DATE_FORMAT(created_at, '%b %Y') AS month_label,
+        COUNT(*) AS total_visitors
+      FROM visitor_logs
+      GROUP BY month_key
+      ORDER BY month_key DESC
+      LIMIT 12
+    `);
+
+    const monthlyVisitorStats = monthlyVisitorStatsRaw.reverse().map((row) => ({
+      month: row.month_label,
+      total_visitors: row.total_visitors,
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
@@ -111,6 +134,7 @@ export async function GET() {
         websitesByCategory,
         recentWebsites,
         websiteVisitStats,
+        monthlyVisitorStats,
       },
     });
   } catch (error) {
