@@ -1,11 +1,10 @@
-// app/backend/category/_client.page.tsx
+// app/backend/users/_client.page.tsx
 
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { LucideIcon } from "lucide-react";
 import {
-  FolderOpen,
+  Users,
   Plus,
   Search,
   Edit,
@@ -15,92 +14,37 @@ import {
   Check,
   AlertCircle,
   Loader2,
-  Globe,
+  Mail,
   Calendar,
-  Tag,
-  FileText,
   RefreshCw,
-  Hash,
-  Smile,
+  Shield,
+  UserCircle,
+  CheckCircle,
+  XCircle,
+  Crown,
 } from "lucide-react";
-import * as LucideIcons from "lucide-react";
 
 // ============================================
 // TYPES
 // ============================================
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description: string | null;
-  icon: string | null;
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  email_verified: boolean;
+  image: string | null;
   created_at: string;
   updated_at: string;
-  website_count?: number;
+  is_active: boolean;
+  role: "admin" | "user";
+  last_login: string | null;
 }
 
 interface Stats {
   total: number;
-  totalWebsites: number;
-}
-
-// ============================================
-// ICON HELPER
-// ============================================
-function formatIconName(iconName: string | null) {
-  if (!iconName) return "";
-  return iconName
-    .split(/[-_\s]+/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("");
-}
-
-function isLucideComponent(entry: unknown): entry is LucideIcon {
-  if (typeof entry === "function") return true;
-
-  if (
-    entry &&
-    typeof entry === "object" &&
-    "render" in entry &&
-    typeof (entry as { render?: unknown }).render === "function"
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-function CategoryIcon({
-  iconName,
-  className = "w-5 h-5 text-purple-600 dark:text-purple-400",
-  fallbackClassName = "w-5 h-5 text-purple-600 dark:text-purple-400",
-}: {
-  iconName: string | null;
-  className?: string;
-  fallbackClassName?: string;
-}) {
-  const formattedName = formatIconName(iconName);
-  const lucideEntry = formattedName
-    ? (LucideIcons as Record<string, unknown>)[formattedName]
-    : null;
-
-  const IconComponent = isLucideComponent(lucideEntry)
-    ? (lucideEntry as LucideIcon)
-    : null;
-
-  if (IconComponent) {
-    return <IconComponent className={className} />;
-  }
-
-  if (iconName) {
-    return (
-      <span className="text-sm font-semibold text-purple-600 dark:text-purple-300">
-        {iconName}
-      </span>
-    );
-  }
-
-  return <FolderOpen className={fallbackClassName} />;
+  activeUsers: number;
+  adminUsers: number;
+  verifiedUsers: number;
 }
 
 // ============================================
@@ -248,13 +192,13 @@ function DeleteConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  categoryName,
+  userName,
   isDeleting,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  categoryName: string;
+  userName: string;
   isDeleting: boolean;
 }) {
   return (
@@ -264,13 +208,13 @@ function DeleteConfirmModal({
           <AlertCircle className="w-8 h-8 text-rose-600 dark:text-rose-400" />
         </div>
         <p className="text-center text-gray-600 dark:text-gray-300 mb-2">
-          Apakah Anda yakin ingin menghapus kategori
+          Apakah Anda yakin ingin menghapus pengguna
         </p>
         <p className="text-center font-semibold text-gray-900 dark:text-white mb-6">
-          &quot;{categoryName}&quot;?
+          &quot;{userName}&quot;?
         </p>
         <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Kategori tidak dapat dihapus jika masih memiliki website terkait.
+          Tindakan ini tidak dapat dibatalkan.
         </p>
         <div className="flex gap-3">
           <button
@@ -302,165 +246,191 @@ function DeleteConfirmModal({
 }
 
 // ============================================
-// CATEGORY FORM MODAL
+// USER FORM MODAL
 // ============================================
-function CategoryFormModal({
+function UserFormModal({
   isOpen,
   onClose,
-  category,
+  user,
   onSave,
   isSaving,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  category?: Category | null;
-  onSave: (data: Partial<Category>) => void;
+  user?: User | null;
+  onSave: (data: Partial<User>) => void;
   isSaving: boolean;
 }) {
   const [formData, setFormData] = useState({
     name: "",
-    slug: "",
-    description: "",
-    icon: "",
+    email: "",
+    role: "user" as "admin" | "user",
+    is_active: true,
+    email_verified: false,
   });
 
-  const [autoSlug, setAutoSlug] = useState(true);
-
   useEffect(() => {
-    if (category) {
+    if (user) {
       setFormData({
-        name: category.name || "",
-        slug: category.slug || "",
-        description: category.description || "",
-        icon: category.icon || "",
+        name: user.name || "",
+        email: user.email || "",
+        role: user.role || "user",
+        is_active: user.is_active ?? true,
+        email_verified: user.email_verified ?? false,
       });
-      setAutoSlug(false);
     } else {
       setFormData({
         name: "",
-        slug: "",
-        description: "",
-        icon: "",
+        email: "",
+        role: "user",
+        is_active: true,
+        email_verified: false,
       });
-      setAutoSlug(true);
     }
-  }, [category, isOpen]);
-
-  // Auto generate slug from name
-  const generateSlug = (name: string): string => {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    setFormData({
-      ...formData,
-      name,
-      slug: autoSlug ? generateSlug(name) : formData.slug,
-    });
-  };
-
-  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAutoSlug(false);
-    setFormData({ ...formData, slug: e.target.value });
-  };
+  }, [user, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as any);
+    onSave(formData);
   };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={category ? "Edit Kategori" : "Tambah Kategori Baru"}
+      title={user ? "Edit Pengguna" : "Tambah Pengguna Baru"}
       size="md">
       <form onSubmit={handleSubmit}>
         <div className="p-6 space-y-5">
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nama Kategori <span className="text-rose-500">*</span>
+              Nama Lengkap <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 value={formData.name}
-                onChange={handleNameChange}
-                required
-                placeholder="Masukkan nama kategori"
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Slug */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Slug <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={formData.slug}
-                onChange={handleSlugChange}
-                required
-                placeholder="slug-kategori"
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </div>
-            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-              Slug akan digunakan di URL. Contoh: /category/
-              <span className="font-medium">
-                {formData.slug || "slug-kategori"}
-              </span>
-            </p>
-          </div>
-
-          {/* Icon */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Icon (Emoji atau Icon Name)
-            </label>
-            <div className="relative">
-              <Smile className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={formData.icon}
                 onChange={(e) =>
-                  setFormData({ ...formData, icon: e.target.value })
+                  setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="🏛️ atau globe"
+                required
+                placeholder="Masukkan nama lengkap"
                 className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
-            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-              Masukkan emoji atau nama icon Lucide (opsional)
-            </p>
           </div>
 
-          {/* Description */}
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Deskripsi
+              Email <span className="text-rose-500">*</span>
             </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              rows={3}
-              placeholder="Masukkan deskripsi kategori (opsional)"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                required
+                disabled={!!user} // Disable email editing for existing users
+                placeholder="nama@merauke.go.id"
+                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            {user && (
+              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                Email tidak dapat diubah setelah pengguna dibuat
+              </p>
+            )}
+          </div>
+
+          {/* Role */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Role <span className="text-rose-500">*</span>
+            </label>
+            <div className="relative">
+              <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <select
+                value={formData.role}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    role: e.target.value as "admin" | "user",
+                  })
+                }
+                required
+                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Status Toggles */}
+          <div className="space-y-3 pt-2">
+            {/* Active Status */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    Status Aktif
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Pengguna dapat mengakses sistem
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={(e) =>
+                    setFormData({ ...formData, is_active: e.target.checked })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+
+            {/* Email Verified */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    Email Terverifikasi
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Email telah diverifikasi
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.email_verified}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      email_verified: e.target.checked,
+                    })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -485,7 +455,7 @@ function CategoryFormModal({
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                {category ? "Simpan Perubahan" : "Tambah Kategori"}
+                {user ? "Simpan Perubahan" : "Tambah Pengguna"}
               </>
             )}
           </button>
@@ -501,82 +471,116 @@ function CategoryFormModal({
 function DetailModal({
   isOpen,
   onClose,
-  category,
+  user,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  category: Category | null;
+  user: User | null;
 }) {
-  if (!category) return null;
+  if (!user) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detail Kategori" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Detail Pengguna" size="md">
       <div className="p-6">
         {/* Header Info */}
         <div className="flex items-start gap-4 mb-6">
-          <div className="w-16 h-16 rounded-xl bg-linear-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0 text-2xl">
-            <CategoryIcon
-              iconName={category.icon}
-              className="w-8 h-8 text-purple-600 dark:text-purple-400"
-              fallbackClassName="w-8 h-8 text-purple-600 dark:text-purple-400"
-            />
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0">
+            {user.image ? (
+              <img
+                src={user.image}
+                alt={user.name || "User"}
+                className="w-full h-full rounded-xl object-cover"
+              />
+            ) : (
+              <UserCircle className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-              {category.name}
+              {user.name || "Nama belum diatur"}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Slug:{" "}
-              <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
-                {category.slug}
-              </code>
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              {user.email}
             </p>
           </div>
         </div>
 
-        {/* Description */}
-        <div className="mb-6">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-            Deskripsi
-          </h4>
-          <p className="text-gray-700 dark:text-gray-300">
-            {category.description || "-"}
-          </p>
+        {/* Status Badges */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+              user.role === "admin"
+                ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+            }`}>
+            {user.role === "admin" ? (
+              <Crown className="w-3.5 h-3.5" />
+            ) : (
+              <UserCircle className="w-3.5 h-3.5" />
+            )}
+            {user.role === "admin" ? "Administrator" : "User"}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+              user.is_active
+                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400"
+            }`}>
+            {user.is_active ? (
+              <CheckCircle className="w-3.5 h-3.5" />
+            ) : (
+              <XCircle className="w-3.5 h-3.5" />
+            )}
+            {user.is_active ? "Aktif" : "Nonaktif"}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+              user.email_verified
+                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+            }`}>
+            <Mail className="w-3.5 h-3.5" />
+            {user.email_verified ? "Email Terverifikasi" : "Belum Verifikasi"}
+          </span>
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 gap-4 mb-6">
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-              Jumlah Website
+              ID Pengguna
             </p>
-            <p className="font-medium text-gray-900 dark:text-white text-lg">
-              {category.website_count || 0} website
+            <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+              {user.id}
             </p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-              Icon
-            </p>
-            <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white text-lg">
-              <CategoryIcon
-                iconName={category.icon}
-                className="w-6 h-6"
-                fallbackClassName="w-6 h-6 text-purple-600 dark:text-purple-400"
-              />
-              <span>{category.icon || "-"}</span>
+          {user.last_login && (
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                Login Terakhir
+              </p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {new Date(user.last_login).toLocaleString("id-ID", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Dates */}
-        <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+        <div className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             <span>
               Dibuat:{" "}
-              {category.created_at
-                ? new Date(category.created_at).toLocaleDateString("id-ID", {
+              {user.created_at
+                ? new Date(user.created_at).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
@@ -588,8 +592,8 @@ function DetailModal({
             <Calendar className="w-4 h-4" />
             <span>
               Diperbarui:{" "}
-              {category.updated_at
-                ? new Date(category.updated_at).toLocaleDateString("id-ID", {
+              {user.updated_at
+                ? new Date(user.updated_at).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
@@ -622,7 +626,7 @@ function TableSkeleton() {
         <div
           key={i}
           className="flex items-center gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full" />
           <div className="flex-1 space-y-2">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
             <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
@@ -643,12 +647,14 @@ function TableSkeleton() {
 // ============================================
 // MAIN COMPONENT
 // ============================================
-export default function KelolaCategoryClient() {
+export default function KelolaUsersClient() {
   // Data states
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<Stats>({
     total: 0,
-    totalWebsites: 0,
+    activeUsers: 0,
+    adminUsers: 0,
+    verifiedUsers: 0,
   });
 
   // Loading states
@@ -658,32 +664,34 @@ export default function KelolaCategoryClient() {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // Fetch categories
-  const fetchCategories = useCallback(async () => {
+  // Fetch users
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/categories");
+      const response = await fetch("/api/users");
       const data = await response.json();
 
       if (data.success) {
-        setCategories(data.data);
+        setUsers(data.data);
         if (data.stats) {
           setStats(data.stats);
         }
       } else {
-        console.error("Failed to fetch categories:", data.error);
+        console.error("Failed to fetch users:", data.error);
       }
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error("Error fetching users:", error);
     } finally {
       setIsLoading(false);
     }
@@ -691,51 +699,65 @@ export default function KelolaCategoryClient() {
 
   // Initial fetch
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    fetchUsers();
+  }, [fetchUsers]);
 
-  // Filtered categories
-  const filteredCategories = categories.filter((category) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      category.name.toLowerCase().includes(query) ||
-      category.slug.toLowerCase().includes(query) ||
-      (category.description &&
-        category.description.toLowerCase().includes(query))
-    );
+  // Filtered users
+  const filteredUsers = users.filter((user) => {
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        user.name?.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        user.id.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+
+    // Role filter
+    if (roleFilter !== "all" && user.role !== roleFilter) {
+      return false;
+    }
+
+    // Status filter
+    if (statusFilter === "active" && !user.is_active) {
+      return false;
+    }
+    if (statusFilter === "inactive" && user.is_active) {
+      return false;
+    }
+
+    return true;
   });
 
   // Handlers
   const handleAdd = () => {
-    setSelectedCategory(null);
+    setSelectedUser(null);
     setIsFormModalOpen(true);
   };
 
-  const handleEdit = (category: Category) => {
-    setSelectedCategory(category);
+  const handleEdit = (user: User) => {
+    setSelectedUser(user);
     setIsFormModalOpen(true);
   };
 
-  const handleDetail = (category: Category) => {
-    setSelectedCategory(category);
+  const handleDetail = (user: User) => {
+    setSelectedUser(user);
     setIsDetailModalOpen(true);
   };
 
-  const handleDeleteClick = (category: Category) => {
-    setSelectedCategory(category);
+  const handleDeleteClick = (user: User) => {
+    setSelectedUser(user);
     setIsDeleteModalOpen(true);
   };
 
-  const handleSave = async (data: Partial<Category>) => {
+  const handleSave = async (data: Partial<User>) => {
     setIsSaving(true);
     try {
-      const method = selectedCategory ? "PUT" : "POST";
-      const body = selectedCategory
-        ? { id: selectedCategory.id, ...data }
-        : data;
+      const method = selectedUser ? "PUT" : "POST";
+      const body = selectedUser ? { id: selectedUser.id, ...data } : data;
 
-      const response = await fetch("/api/categories", {
+      const response = await fetch("/api/users", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -745,12 +767,12 @@ export default function KelolaCategoryClient() {
 
       if (result.success) {
         setIsFormModalOpen(false);
-        fetchCategories();
+        fetchUsers();
       } else {
         alert(result.error || "Gagal menyimpan data");
       }
     } catch (error) {
-      console.error("Error saving category:", error);
+      console.error("Error saving user:", error);
       alert("Terjadi kesalahan saat menyimpan data");
     } finally {
       setIsSaving(false);
@@ -758,28 +780,25 @@ export default function KelolaCategoryClient() {
   };
 
   const handleDelete = async () => {
-    if (!selectedCategory) return;
+    if (!selectedUser) return;
 
     setIsDeleting(true);
     try {
-      const response = await fetch(
-        `/api/categories?id=${selectedCategory.id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/users?id=${selectedUser.id}`, {
+        method: "DELETE",
+      });
 
       const result = await response.json();
 
       if (result.success) {
         setIsDeleteModalOpen(false);
-        setSelectedCategory(null);
-        fetchCategories();
+        setSelectedUser(null);
+        fetchUsers();
       } else {
         alert(result.error || "Gagal menghapus data");
       }
     } catch (error) {
-      console.error("Error deleting category:", error);
+      console.error("Error deleting user:", error);
       alert("Terjadi kesalahan saat menghapus data");
     } finally {
       setIsDeleting(false);
@@ -792,51 +811,89 @@ export default function KelolaCategoryClient() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Kelola Kategori
+            Kelola Pengguna
           </h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Kelola kategori untuk mengelompokkan website di Portal Merauke
+            Kelola pengguna dan hak akses sistem Portal Merauke
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
-            title="Total Kategori"
+            title="Total Pengguna"
             value={stats.total}
-            icon={FolderOpen}
+            icon={Users}
+            color="blue"
+            isLoading={isLoading}
+          />
+          <StatCard
+            title="Pengguna Aktif"
+            value={stats.activeUsers}
+            icon={CheckCircle}
+            color="green"
+            isLoading={isLoading}
+          />
+          <StatCard
+            title="Administrator"
+            value={stats.adminUsers}
+            icon={Crown}
             color="purple"
             isLoading={isLoading}
           />
           <StatCard
-            title="Total Website"
-            value={stats.totalWebsites}
-            icon={Globe}
-            color="blue"
+            title="Email Terverifikasi"
+            value={stats.verifiedUsers}
+            icon={Mail}
+            color="amber"
             isLoading={isLoading}
           />
         </div>
 
         {/* Filters & Actions */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Cari kategori..."
+                placeholder="Cari pengguna..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
 
+            {/* Role Filter */}
+            <select
+              value={roleFilter}
+              onChange={(e) =>
+                setRoleFilter(e.target.value as "all" | "admin" | "user")
+              }
+              className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+              <option value="all">Semua Role</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "all" | "active" | "inactive")
+              }
+              className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+              <option value="all">Semua Status</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Nonaktif</option>
+            </select>
+
             {/* Actions */}
             <div className="flex gap-3">
               {/* Refresh Button */}
               <button
-                onClick={() => fetchCategories()}
+                onClick={() => fetchUsers()}
                 disabled={isLoading}
                 className="p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                 title="Refresh">
@@ -848,9 +905,9 @@ export default function KelolaCategoryClient() {
               {/* Add Button */}
               <button
                 onClick={handleAdd}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25">
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 whitespace-nowrap">
                 <Plus className="w-5 h-5" />
-                <span>Tambah Kategori</span>
+                <span>Tambah Pengguna</span>
               </button>
             </div>
           </div>
@@ -863,9 +920,9 @@ export default function KelolaCategoryClient() {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Menampilkan{" "}
               <span className="font-medium text-gray-900 dark:text-white">
-                {filteredCategories.length}
+                {filteredUsers.length}
               </span>{" "}
-              kategori
+              pengguna
             </p>
           </div>
 
@@ -875,13 +932,16 @@ export default function KelolaCategoryClient() {
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700/50">
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Kategori
+                    Pengguna
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Slug
+                    Role
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Website
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Login Terakhir
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Aksi
@@ -891,88 +951,136 @@ export default function KelolaCategoryClient() {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4}>
+                    <td colSpan={5}>
                       <TableSkeleton />
                     </td>
                   </tr>
-                ) : filteredCategories.length === 0 ? (
+                ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
-                          <FolderOpen className="w-8 h-8 text-gray-400" />
+                          <Users className="w-8 h-8 text-gray-400" />
                         </div>
                         <p className="text-gray-500 dark:text-gray-400 font-medium">
-                          Tidak ada kategori ditemukan
+                          Tidak ada pengguna ditemukan
                         </p>
                         <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                          {searchQuery
-                            ? "Coba ubah kata kunci pencarian"
-                            : "Mulai dengan menambahkan kategori baru"}
+                          {searchQuery ||
+                          roleFilter !== "all" ||
+                          statusFilter !== "all"
+                            ? "Coba ubah filter pencarian"
+                            : "Mulai dengan menambahkan pengguna baru"}
                         </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  filteredCategories.map((category) => (
+                  filteredUsers.map((user) => (
                     <tr
-                      key={category.id}
+                      key={user.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                      {/* Category Info */}
+                      {/* User Info */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-linear-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0 text-lg">
-                            <CategoryIcon
-                              iconName={category.icon}
-                              className="w-5 h-5 text-purple-600 dark:text-purple-400"
-                              fallbackClassName="w-5 h-5 text-purple-600 dark:text-purple-400"
-                            />
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                            {user.image ? (
+                              <img
+                                src={user.image}
+                                alt={user.name || "User"}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <UserCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white">
-                              {category.name}
+                              {user.name || "Nama belum diatur"}
                             </p>
-                            {category.description && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[250px]">
-                                {category.description}
-                              </p>
-                            )}
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+                              {user.email}
+                            </p>
                           </div>
                         </div>
                       </td>
 
-                      {/* Slug */}
+                      {/* Role */}
                       <td className="px-6 py-4">
-                        <code className="px-2 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                          {category.slug}
-                        </code>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                            user.role === "admin"
+                              ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                              : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                          }`}>
+                          {user.role === "admin" ? (
+                            <Crown className="w-3.5 h-3.5" />
+                          ) : (
+                            <UserCircle className="w-3.5 h-3.5" />
+                          )}
+                          {user.role === "admin" ? "Admin" : "User"}
+                        </span>
                       </td>
 
-                      {/* Website Count */}
+                      {/* Status */}
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                          <Globe className="w-3.5 h-3.5" />
-                          {category.website_count || 0}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                              user.is_active
+                                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400"
+                            }`}>
+                            {user.is_active ? (
+                              <CheckCircle className="w-3.5 h-3.5" />
+                            ) : (
+                              <XCircle className="w-3.5 h-3.5" />
+                            )}
+                            {user.is_active ? "Aktif" : "Nonaktif"}
+                          </span>
+                          {user.email_verified && (
+                            <span
+                              className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400"
+                              title="Email terverifikasi">
+                              <Mail className="w-3.5 h-3.5" />
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Last Login */}
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {user.last_login
+                            ? new Date(user.last_login).toLocaleDateString(
+                                "id-ID",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }
+                              )
+                            : "-"}
+                        </p>
                       </td>
 
                       {/* Actions */}
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handleDetail(category)}
+                            onClick={() => handleDetail(user)}
                             className="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                             title="Lihat Detail">
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleEdit(category)}
+                            onClick={() => handleEdit(user)}
                             className="p-2 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors"
                             title="Edit">
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteClick(category)}
+                            onClick={() => handleDeleteClick(user)}
                             className="p-2 rounded-lg text-gray-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
                             title="Hapus">
                             <Trash2 className="w-4 h-4" />
@@ -989,10 +1097,10 @@ export default function KelolaCategoryClient() {
       </div>
 
       {/* Modals */}
-      <CategoryFormModal
+      <UserFormModal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
-        category={selectedCategory}
+        user={selectedUser}
         onSave={handleSave}
         isSaving={isSaving}
       />
@@ -1000,14 +1108,14 @@ export default function KelolaCategoryClient() {
       <DetailModal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        category={selectedCategory}
+        user={selectedUser}
       />
 
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDelete}
-        categoryName={selectedCategory?.name || ""}
+        userName={selectedUser?.name || selectedUser?.email || ""}
         isDeleting={isDeleting}
       />
     </div>

@@ -1,31 +1,34 @@
+// components/backend/header.tsx
+// ⭐ UPDATED VERSION - Auto detect page & use useAuth
+
 "use client";
 
 import Link from "next/link";
-import { Building2, Loader2, LogOut, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Loader2, LogOut, User } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth-context";
 
-interface BackendHeaderProps {
-  userName?: string | null;
-  userEmail?: string | null;
-  userRole?: string | null;
-  onLogout?: () => void;
-  isLoggingOut?: boolean;
-  pageName?: string;
-}
+export default function BackendHeader() {
+  const pathname = usePathname();
+  const { user, logout, isLoggingOut } = useAuth();
 
-export default function BackendHeader({
-  userName,
-  userEmail,
-  userRole,
-  onLogout,
-  isLoggingOut,
-  pageName = "Dashboard",
-}: BackendHeaderProps) {
-  const displayName = userName || userEmail || "Pengguna";
-  const displayRole = userRole || "Admin";
-  const hasLogout = typeof onLogout === "function";
+  // Auto-detect page name from pathname
+  const getPageName = (): string => {
+    if (pathname.includes("/dashboard")) return "Dashboard";
+    if (pathname.includes("/website")) return "Kelola Website";
+    if (pathname.includes("/category")) return "Kelola Kategori";
+    if (pathname.includes("/users")) return "Kelola Pengguna";
+    if (pathname.includes("/statistics")) return "Statistik";
+    if (pathname.includes("/settings")) return "Pengaturan";
+    return "Dashboard";
+  };
+
+  const pageName = getPageName();
+  const displayName = user?.name || user?.email || "Pengguna";
+  const displayRole = user?.role === "admin" ? "Admin" : "User";
 
   return (
     <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
@@ -57,6 +60,8 @@ export default function BackendHeader({
           {/* Actions */}
           <div className="flex items-center gap-3">
             <ThemeToggle />
+
+            {/* User Info */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
               <User className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -66,14 +71,19 @@ export default function BackendHeader({
                 {displayRole}
               </span>
             </div>
+
+            {/* Logout Button */}
             <Button
               variant="outline"
               size="sm"
-              onClick={hasLogout ? onLogout : undefined}
-              disabled={!hasLogout || isLoggingOut}
+              onClick={logout}
+              disabled={isLoggingOut}
               className="border-gray-300 dark:border-gray-600">
               {isLoggingOut ? (
-                <Loader />
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Keluar...
+                </>
               ) : (
                 <>
                   <LogOut className="w-4 h-4 mr-2" />
@@ -86,8 +96,4 @@ export default function BackendHeader({
       </div>
     </header>
   );
-}
-
-function Loader() {
-  return <Loader2 className="w-4 h-4 animate-spin" />;
 }

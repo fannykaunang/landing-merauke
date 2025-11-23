@@ -27,8 +27,8 @@ import {
   RefreshCw,
   Tag,
 } from "lucide-react";
-import BackendHeader from "@/components/backend/header";
-import { Footer } from "@/components/backend/footer";
+import { AuthUser } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 // ============================================
 // TYPES
@@ -778,6 +778,8 @@ function TableSkeleton() {
 // ============================================
 export default function KelolaWebsitesClient() {
   // Data states
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [websites, setWebsites] = useState<Website[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -786,6 +788,7 @@ export default function KelolaWebsitesClient() {
     inactive: 0,
     featured: 0,
   });
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -843,6 +846,41 @@ export default function KelolaWebsitesClient() {
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
+    }
+  };
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session");
+        const data = await response.json();
+
+        if (!data.authenticated) {
+          router.push("/login");
+          return;
+        }
+
+        setUser(data.data.user);
+      } catch (error) {
+        console.error("Session check error:", error);
+        router.push("/login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -937,7 +975,6 @@ export default function KelolaWebsitesClient() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <BackendHeader pageName="Kelola Website" />
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -1220,9 +1257,6 @@ export default function KelolaWebsitesClient() {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
 
       {/* Modals */}
       <WebsiteFormModal
