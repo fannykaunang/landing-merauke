@@ -1,11 +1,11 @@
 // components/backend/header.tsx
-// ⭐ UPDATED VERSION - Auto detect page & use useAuth
 
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Loader2, LogOut, User } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,37 @@ import { useAuth } from "@/contexts/auth-context";
 export default function BackendHeader() {
   const pathname = usePathname();
   const { user, logout, isLoggingOut } = useAuth();
+  const [appAlias, setAppAlias] = useState("merauke.go.id");
+  const [appLogo, setAppLogo] = useState("/images/logo-merauke.png");
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        const aliasAplikasi = result?.data?.alias_aplikasi;
+        const logo = result?.data?.logo;
+
+        if (
+          typeof aliasAplikasi === "string" &&
+          aliasAplikasi.trim().length > 0
+        ) {
+          setAppAlias(aliasAplikasi);
+        }
+
+        if (typeof logo === "string" && logo.trim().length > 0) {
+          setAppLogo(logo);
+        }
+      } catch (error) {
+        console.error("Failed to fetch app settings", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   // Auto-detect page name from pathname
   const getPageName = (): string => {
@@ -38,7 +69,7 @@ export default function BackendHeader() {
           <Link href="/" className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl shadow-lg">
               <img
-                src="/images/logo-merauke.png"
+                src={appLogo}
                 width={40}
                 height={40}
                 alt="Logo Kabupaten Merauke"
@@ -49,7 +80,7 @@ export default function BackendHeader() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                Portal Website
+                {appAlias}
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">
                 {pageName}

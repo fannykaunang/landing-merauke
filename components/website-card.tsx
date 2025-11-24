@@ -37,6 +37,13 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
   const IconComponent = iconMap[website.category_icon || ""] || LayoutGrid;
   const tags = website.tags ? JSON.parse(website.tags) : [];
   const isFeatured = website.featured === 1 || website.featured === true;
+  const imageSrc = website.image_url
+    ? website.image_url.startsWith("http")
+      ? website.image_url
+      : website.image_url.startsWith("/")
+      ? website.image_url
+      : `/${website.image_url}`
+    : null;
 
   const handleVisit = useCallback(
     async (event: MouseEvent<HTMLAnchorElement>) => {
@@ -76,9 +83,9 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
 
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
-        {website.image_url ? (
+        {imageSrc ? (
           <Image
-            src={website.image_url}
+            src={imageSrc}
             alt={website.title}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"

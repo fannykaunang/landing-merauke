@@ -5,3 +5,6 @@
 # 23-11-2025
 1. suruh claude bikin halaman kelola users
 2. cek ulang ketika CRUD sudah include csrf token atau belum
+
+# 24-11-2025
+1. ganti URL gambar dari link ke file upload di halaman app/backend/website/_client.page.tsx

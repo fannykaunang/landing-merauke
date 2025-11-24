@@ -18,6 +18,45 @@ import {
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [appAlias, setAppAlias] = useState("merauke.go.id");
+  const [appLogo, setAppLogo] = useState("/images/logo-merauke.png");
+  const [instansiName, setInstansiName] = useState(
+    "Dinas Kominfo Kabupaten Merauke"
+  );
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        const name = result?.data?.instansi_nama;
+        const aliasAplikasi = result?.data?.alias_aplikasi;
+        const logo = result?.data?.logo;
+
+        if (name) {
+          setInstansiName(name);
+        }
+
+        if (
+          typeof aliasAplikasi === "string" &&
+          aliasAplikasi.trim().length > 0
+        ) {
+          setAppAlias(aliasAplikasi);
+        }
+
+        if (typeof logo === "string" && logo.trim().length > 0) {
+          setAppLogo(logo);
+        }
+      } catch (error) {
+        console.error("Failed to fetch app settings", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,7 +86,7 @@ export function Header() {
           <Link href="/" className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl">
               <img
-                src="/images/logo-merauke.png"
+                src={appLogo}
                 width={40}
                 height={40}
                 alt="Logo Kabupaten Merauke"
@@ -58,10 +97,10 @@ export function Header() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                Portal Website
+                {appAlias}
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">
-                Kabupaten Merauke
+                {instansiName}
               </p>
             </div>
           </Link>
@@ -113,9 +152,9 @@ export function Header() {
                       <Building2 className="w-6 h-6 text-white" />
                     </div>
                     <div className="text-left">
-                      <p className="font-bold">Portal Website</p>
+                      <p className="font-bold">{appAlias}</p>
                       <p className="text-xs text-gray-500 font-normal">
-                        Kabupaten Merauke
+                        {instansiName}
                       </p>
                     </div>
                   </SheetTitle>
@@ -140,14 +179,14 @@ export function Header() {
                     </Link>
                   </Button>
                   <Button
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                    className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
                     asChild>
                     <a
                       href="https://merauke.go.id"
                       target="_blank"
                       rel="noopener noreferrer">
                       <Globe className="w-4 h-4 mr-2" />
-                      merauke.go.id
+                      {appAlias}
                     </a>
                   </Button>
                 </nav>

@@ -68,6 +68,16 @@ interface Stats {
   featured: number;
 }
 
+const resolveImageUrl = (imagePath: string | null) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
+  }
+
+  const normalized = imagePath.replace(/^\/+/, "");
+  return `/${normalized}`;
+};
+
 // ============================================
 // STAT CARD COMPONENT
 // ============================================
@@ -281,7 +291,7 @@ function WebsiteFormModal({
   onClose: () => void;
   website?: Website | null;
   categories: Category[];
-  onSave: (data: Partial<Website>) => void;
+  onSave: (data: Partial<Website>, imageFile?: File | null) => Promise<void>;
   isSaving: boolean;
 }) {
   const [formData, setFormData] = useState({
@@ -294,6 +304,8 @@ function WebsiteFormModal({
     featured: false,
     is_active: true,
   });
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (website) {
@@ -319,11 +331,12 @@ function WebsiteFormModal({
         is_active: true,
       });
     }
+    setImageFile(null);
   }, [website, isOpen, categories]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as any);
+    await onSave(formData as any, imageFile);
   };
 
   return (
@@ -438,23 +451,33 @@ function WebsiteFormModal({
             </div>
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              URL Gambar
+              Upload Gambar
             </label>
-            <div className="relative">
-              <Upload className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="relative flex items-center gap-3">
+              <Upload className="w-5 h-5 text-gray-400" />
               <input
-                type="text"
-                value={formData.image_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, image_url: e.target.value })
-                }
-                placeholder="https://example.com/image.png"
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setImageFile(file);
+                }}
+                className="flex-1 text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300"
               />
             </div>
+            {formData.image_url && !imageFile && (
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Gambar saat ini: {formData.image_url}
+              </p>
+            )}
+            {imageFile && (
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                File terpilih: {imageFile.name}
+              </p>
+            )}
           </div>
 
           {/* Status & Featured */}
@@ -578,9 +601,9 @@ function DetailModal({
         {/* Header Info */}
         <div className="flex items-start gap-4 mb-6">
           <div className="w-20 h-20 rounded-xl bg-linear-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center shrink-0 overflow-hidden">
-            {website.image_url ? (
+            {resolveImageUrl(website.image_url) ? (
               <img
-                src={website.image_url}
+                src={resolveImageUrl(website.image_url) || ""}
                 alt={website.title}
                 className="w-full h-full object-cover"
               />
@@ -919,11 +942,37 @@ export default function KelolaWebsitesClient() {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSave = async (data: Partial<Website>) => {
+  const handleSave = async (
+    data: Partial<Website>,
+    imageFile?: File | null
+  ) => {
     setIsSaving(true);
     try {
+      let imagePath = data.image_url;
+
+      if (imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", imageFile);
+
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        const uploadResult = await uploadResponse.json();
+
+        if (!uploadResponse.ok || !uploadResult.success) {
+          alert(uploadResult.error || "Gagal mengunggah gambar");
+          return;
+        }
+
+        imagePath = uploadResult.path;
+      }
+
       const method = selectedWebsite ? "PUT" : "POST";
-      const body = selectedWebsite ? { id: selectedWebsite.id, ...data } : data;
+      const body = selectedWebsite
+        ? { id: selectedWebsite.id, ...data, image_url: imagePath }
+        : { ...data, image_url: imagePath };
 
       const response = await fetch("/api/websites", {
         method,
@@ -1166,9 +1215,9 @@ export default function KelolaWebsitesClient() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center shrink-0 overflow-hidden">
-                            {website.image_url ? (
+                            {resolveImageUrl(website.image_url) ? (
                               <img
-                                src={website.image_url}
+                                src={resolveImageUrl(website.image_url) || ""}
                                 alt={website.title}
                                 className="w-full h-full object-cover"
                               />

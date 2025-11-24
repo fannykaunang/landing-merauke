@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Building2,
@@ -16,6 +17,87 @@ import { Separator } from "@/components/ui/separator";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const [instansiName, setInstansiName] = useState(
+    "Dinas Kominfo Kabupaten Merauke"
+  );
+  const [appAlias, setAppAlias] = useState("merauke.go.id");
+  const [appDeskripsi, setAppDeskripsi] = useState(
+    "Portal Website dan Aplikasi Pemerintah Kabupaten Merauke"
+  );
+  const [startYear, setStartYear] = useState<number>(currentYear);
+  const [instansiAlamat, setInstansiAlamat] = useState(
+    "Jl. TMP Trikora No. 78, Kel. Maro. Merauke, Papua Selatan"
+  );
+  const [instansiTelepon, setInstansiTelepon] = useState("0971-321123");
+  const [instansiEmail, setInstansiEmail] = useState("portal@merauke.go.id");
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        const name = result?.data?.instansi_nama;
+        const aliasAplikasi = result?.data?.alias_aplikasi;
+        const deskAplikasi = result?.data?.deskripsi;
+        const alamatInstansi = result?.data?.alamat;
+        const telpInstansi = result?.data?.no_telepon;
+        const emailInstansi = result?.data?.email;
+        const year = result?.data?.tahun;
+
+        if (name) {
+          setInstansiName(name);
+        }
+
+        if (
+          typeof aliasAplikasi === "string" &&
+          aliasAplikasi.trim().length > 0
+        ) {
+          setAppAlias(aliasAplikasi);
+        }
+
+        if (
+          typeof deskAplikasi === "string" &&
+          deskAplikasi.trim().length > 0
+        ) {
+          setAppDeskripsi(deskAplikasi);
+        }
+
+        if (
+          typeof telpInstansi === "string" &&
+          telpInstansi.trim().length > 0
+        ) {
+          setInstansiTelepon(telpInstansi);
+        }
+
+        if (
+          typeof emailInstansi === "string" &&
+          emailInstansi.trim().length > 0
+        ) {
+          setInstansiEmail(emailInstansi);
+        }
+
+        if (
+          typeof alamatInstansi === "string" &&
+          alamatInstansi.trim().length > 0
+        ) {
+          setInstansiAlamat(alamatInstansi);
+        }
+
+        const parsedYear = typeof year === "string" ? parseInt(year, 10) : year;
+
+        if (typeof parsedYear === "number" && !Number.isNaN(parsedYear)) {
+          setStartYear(parsedYear);
+        }
+      } catch (error) {
+        console.error("Failed to fetch app settings", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   const socialLinks = [
     { icon: Facebook, href: "#", label: "Facebook" },
@@ -40,15 +122,24 @@ export function Footer() {
           {/* About */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
-                <Building2 className="w-7 h-7 text-white" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl shadow-lg">
+                <img
+                  src="/images/logo-merauke.png"
+                  width={40}
+                  height={40}
+                  alt="Logo Kabupaten Merauke"
+                  className="w-10 h-10 object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
               <div>
-                <h3 className="text-xl font-bold">Portal Website & Aplikasi</h3>
-                <p className="text-sm text-gray-400">Kabupaten Merauke</p>
+                <h3 className="text-xl font-bold">{appAlias}</h3>
+                <p className="text-sm text-gray-400">{instansiName}</p>
               </div>
             </div>
             <p className="text-gray-400 mb-6 leading-relaxed max-w-md">
+              {appDeskripsi}.<br></br>
               Portal ini menyediakan akses ke berbagai website dan aplikasi
               resmi yang dikelola oleh Pemerintah Kabupaten Merauke melalui
               Dinas Komunikasi dan Informatika.
@@ -93,7 +184,7 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                 <span className="text-gray-400 text-sm">
-                  Jl. Raya Mandala, Merauke
+                  {instansiAlamat}
                   <br />
                   Papua Selatan, Indonesia
                 </span>
@@ -103,15 +194,15 @@ export function Footer() {
                 <a
                   href="tel:+62971321XXX"
                   className="text-gray-400 hover:text-white transition-colors text-sm">
-                  (0971) 321-XXX
+                  {instansiTelepon}
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-blue-500 shrink-0" />
                 <a
-                  href="mailto:kominfo@merauke.go.id"
+                  href={`mailto:${instansiEmail}`}
                   className="text-gray-400 hover:text-white transition-colors text-sm">
-                  kominfo@merauke.go.id
+                  {instansiEmail}
                 </a>
               </li>
               <li className="flex items-center gap-3">
@@ -121,7 +212,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-white transition-colors text-sm">
-                  merauke.go.id
+                  {appAlias}
                 </a>
               </li>
             </ul>
@@ -133,8 +224,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-gray-400 text-sm text-center md:text-left">
-            © 2025 - {currentYear} Pemerintah Kabupaten Merauke. Hak Cipta
-            Dilindungi.
+            © {startYear} - {currentYear} {instansiName}. Hak Cipta Dilindungi.
           </p>
           <p className="text-gray-500 text-sm sm:text-center">
             Dikelola oleh{" "}

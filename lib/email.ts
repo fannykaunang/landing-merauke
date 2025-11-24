@@ -63,10 +63,7 @@ export async function sendOTPEmail(
           <tr>
             <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); border-radius: 16px 16px 0 0;">
               <div style="display: inline-block; padding: 12px; background-color: rgba(255, 255, 255, 0.2); border-radius: 12px; margin-bottom: 16px;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
+                <img width="50" height="50" src="https://izakod-asn.merauke.go.id/Lambang_Kabupaten_Merauke.png">
               </div>
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
                 Portal Website & Aplikasi
@@ -84,7 +81,9 @@ export async function sendOTPEmail(
                 Kode Verifikasi ${typeLabels[type]}
               </h2>
               <p style="margin: 0 0 32px; color: #64748b; font-size: 15px; line-height: 1.6; text-align: center;">
-                Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[type].toLowerCase()}. Kode ini berlaku selama <strong>5 menit</strong>.
+                Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[
+                  type
+                ].toLowerCase()}. Kode ini berlaku selama <strong>5 menit</strong>.
               </p>
               
               <!-- OTP Code Box -->
@@ -133,7 +132,9 @@ Portal Website & Aplikasi Kabupaten Merauke
 
 Kode Verifikasi ${typeLabels[type]}
 
-Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[type].toLowerCase()}:
+Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[
+    type
+  ].toLowerCase()}:
 
 ${otp}
 
@@ -148,15 +149,17 @@ Dinas Komunikasi dan Informatika
 
   try {
     const transporter = createTransporter();
-    
+
     // Log untuk debugging
     console.log("=== Sending OTP Email ===");
     console.log("To:", to);
     console.log("SMTP_HOST:", process.env.SMTP_HOST);
     console.log("SMTP_USER:", process.env.SMTP_USER);
-    
+
     await transporter.sendMail({
-      from: `"Portal Merauke" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: `"Portal Merauke" <${
+        process.env.SMTP_FROM || process.env.SMTP_USER
+      }>`,
       to,
       subject,
       text: textContent,
@@ -178,7 +181,7 @@ export async function sendLoginNotificationEmail(
   userAgent: string
 ): Promise<boolean> {
   const subject = "[Portal Merauke] Notifikasi Login Baru";
-  
+
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="id">
@@ -208,7 +211,10 @@ export async function sendLoginNotificationEmail(
               </p>
               <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 16px 0;">
                 <p style="margin: 0 0 8px; color: #475569; font-size: 14px;">
-                  <strong>Waktu:</strong> ${new Date().toLocaleString("id-ID", { dateStyle: "full", timeStyle: "short" })}
+                  <strong>Waktu:</strong> ${new Date().toLocaleString("id-ID", {
+                    dateStyle: "full",
+                    timeStyle: "short",
+                  })}
                 </p>
                 <p style="margin: 0 0 8px; color: #475569; font-size: 14px;">
                   <strong>IP Address:</strong> ${ipAddress}
@@ -233,7 +239,9 @@ export async function sendLoginNotificationEmail(
   try {
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `"Portal Merauke" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: `"Portal Merauke" <${
+        process.env.SMTP_FROM || process.env.SMTP_USER
+      }>`,
       to,
       subject,
       html: htmlContent,
