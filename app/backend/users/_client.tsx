@@ -644,6 +644,7 @@ export default function KelolaUsersClient() {
     adminUsers: 0,
     verifiedUsers: 0,
   });
+  const [csrfToken, setCsrfToken] = useState<string>("");
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -662,6 +663,24 @@ export default function KelolaUsersClient() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const fetchCsrfToken = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/csrf");
+      const data = await response.json();
+
+      if (data.success && data.data?.csrf_token) {
+        setCsrfToken(data.data.csrf_token);
+        return data.data.csrf_token as string;
+      }
+
+      console.error("Failed to fetch CSRF token:", data.error);
+      return null;
+    } catch (error) {
+      console.error("Error fetching CSRF token:", error);
+      return null;
+    }
+  }, []);
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
@@ -688,7 +707,7 @@ export default function KelolaUsersClient() {
   // Initial fetch
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, [fetchCsrfToken, fetchUsers]);
 
   // Filtered users
   const filteredUsers = users.filter((user) => {
@@ -742,8 +761,16 @@ export default function KelolaUsersClient() {
   const handleSave = async (data: Partial<User>) => {
     setIsSaving(true);
     try {
+      const token = csrfToken || (await fetchCsrfToken());
+      if (!token) {
+        alert("Gagal mendapatkan CSRF token");
+        return;
+      }
+
       const method = selectedUser ? "PUT" : "POST";
-      const body = selectedUser ? { id: selectedUser.id, ...data } : data;
+      const body = selectedUser
+        ? { id: selectedUser.id, ...data, csrf_token: token }
+        : { ...data, csrf_token: token };
 
       const response = await fetch("/api/users", {
         method,
@@ -772,8 +799,16 @@ export default function KelolaUsersClient() {
 
     setIsDeleting(true);
     try {
+      const token = csrfToken || (await fetchCsrfToken());
+      if (!token) {
+        alert("Gagal mendapatkan CSRF token");
+        return;
+      }
+
       const response = await fetch(`/api/users?id=${selectedUser.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csrf_token: token, id: selectedUser.id }),
       });
 
       const result = await response.json();

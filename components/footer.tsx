@@ -1,3 +1,5 @@
+// components/footer.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -30,6 +32,11 @@ export function Footer() {
   );
   const [instansiTelepon, setInstansiTelepon] = useState("0971-321123");
   const [instansiEmail, setInstansiEmail] = useState("portal@merauke.go.id");
+  const [appLogo, setAppLogo] = useState("/images/logo-merauke.png");
+  const [linkFacebook, setLinkFacebook] = useState("https://facebook.com");
+  const [linkInstagram, setLinkInstagram] = useState("https://instagram.com");
+  const [linkTwitter, setLinkTwitter] = useState("https://x.com");
+  const [linkYouTube, setLinkYouTube] = useState("https://youtube.com");
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -46,6 +53,11 @@ export function Footer() {
         const telpInstansi = result?.data?.no_telepon;
         const emailInstansi = result?.data?.email;
         const year = result?.data?.tahun;
+        const logo = result?.data?.logo;
+        const facebook = result?.data?.facebook_url;
+        const instagram = result?.data?.instagram_url;
+        const twitter = result?.data?.twitter_url;
+        const youtube = result?.data?.youtube_url;
 
         if (name) {
           setInstansiName(name);
@@ -86,10 +98,30 @@ export function Footer() {
           setInstansiAlamat(alamatInstansi);
         }
 
+        if (typeof logo === "string" && logo.trim().length > 0) {
+          setAppLogo(logo);
+        }
+
         const parsedYear = typeof year === "string" ? parseInt(year, 10) : year;
 
         if (typeof parsedYear === "number" && !Number.isNaN(parsedYear)) {
           setStartYear(parsedYear);
+        }
+
+        if (typeof facebook === "string" && facebook.trim().length > 0) {
+          setLinkFacebook(facebook);
+        }
+
+        if (typeof instagram === "string" && instagram.trim().length > 0) {
+          setLinkInstagram(instagram);
+        }
+
+        if (typeof youtube === "string" && youtube.trim().length > 0) {
+          setLinkYouTube(youtube);
+        }
+
+        if (typeof twitter === "string" && twitter.trim().length > 0) {
+          setLinkTwitter(twitter);
         }
       } catch (error) {
         console.error("Failed to fetch app settings", error);
@@ -100,10 +132,10 @@ export function Footer() {
   }, []);
 
   const socialLinks = [
-    { icon: Facebook, href: "#", label: "Facebook" },
-    { icon: Instagram, href: "#", label: "Instagram" },
-    { icon: Youtube, href: "#", label: "YouTube" },
-    { icon: Twitter, href: "#", label: "Twitter" },
+    { icon: Facebook, href: linkFacebook, label: "Facebook" },
+    { icon: Instagram, href: linkInstagram, label: "Instagram" },
+    { icon: Youtube, href: linkYouTube, label: "YouTube" },
+    { icon: Twitter, href: linkTwitter, label: "Twitter" },
   ];
 
   const quickLinks = [
@@ -124,7 +156,7 @@ export function Footer() {
             <div className="flex items-center gap-3 mb-6">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl shadow-lg">
                 <img
-                  src="/images/logo-merauke.png"
+                  src={appLogo}
                   width={40}
                   height={40}
                   alt="Logo Kabupaten Merauke"
@@ -183,11 +215,7 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                <span className="text-gray-400 text-sm">
-                  {instansiAlamat}
-                  <br />
-                  Papua Selatan, Indonesia
-                </span>
+                <span className="text-gray-400 text-sm">{instansiAlamat}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-blue-500 shrink-0" />

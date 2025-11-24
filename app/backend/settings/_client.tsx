@@ -1,7 +1,7 @@
 // app/backend/settings/_client.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Settings,
   Info,
@@ -16,7 +16,6 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
-  Server,
 } from "lucide-react";
 
 interface AppSettings {
@@ -133,10 +132,30 @@ export default function SettingsPageClient() {
     text: string;
   } | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [csrfToken, setCsrfToken] = useState<string>("");
+
+  const fetchCsrfToken = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/csrf");
+      const data = await response.json();
+
+      if (data.success && data.data?.csrf_token) {
+        setCsrfToken(data.data.csrf_token);
+        return data.data.csrf_token as string;
+      }
+
+      console.error("Failed to fetch CSRF token:", data.error);
+      return null;
+    } catch (error) {
+      console.error("Error fetching CSRF token:", error);
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
+    fetchCsrfToken();
     fetchSettings();
-  }, []);
+  }, [fetchCsrfToken]);
 
   const fetchSettings = async () => {
     try {
@@ -168,11 +187,17 @@ export default function SettingsPageClient() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const token = csrfToken || (await fetchCsrfToken());
+      if (!token) {
+        showMessage("error", "Gagal mendapatkan CSRF token");
+        return;
+      }
+
       const payload = normalizeBooleanFields(formData);
       const response = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, csrf_token: token }),
       });
 
       const result = await response.json();

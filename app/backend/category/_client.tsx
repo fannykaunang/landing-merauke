@@ -639,6 +639,7 @@ export default function KelolaCategoryClient() {
     total: 0,
     totalWebsites: 0,
   });
+  const [csrfToken, setCsrfToken] = useState<string>("");
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -655,6 +656,24 @@ export default function KelolaCategoryClient() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
+
+  const fetchCsrfToken = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/csrf");
+      const data = await response.json();
+
+      if (data.success && data.data?.csrf_token) {
+        setCsrfToken(data.data.csrf_token);
+        return data.data.csrf_token as string;
+      }
+
+      console.error("Failed to fetch CSRF token:", data.error);
+      return null;
+    } catch (error) {
+      console.error("Error fetching CSRF token:", error);
+      return null;
+    }
+  }, []);
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -681,7 +700,7 @@ export default function KelolaCategoryClient() {
   // Initial fetch
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchCategories, fetchCsrfToken]);
 
   // Filtered categories
   const filteredCategories = categories.filter((category) => {
@@ -719,10 +738,16 @@ export default function KelolaCategoryClient() {
   const handleSave = async (data: Partial<Category>) => {
     setIsSaving(true);
     try {
+      const token = csrfToken || (await fetchCsrfToken());
+      if (!token) {
+        alert("Gagal mendapatkan CSRF token");
+        return;
+      }
+
       const method = selectedCategory ? "PUT" : "POST";
       const body = selectedCategory
-        ? { id: selectedCategory.id, ...data }
-        : data;
+        ? { id: selectedCategory.id, ...data, csrf_token: token }
+        : { ...data, csrf_token: token };
 
       const response = await fetch("/api/categories", {
         method,
@@ -751,10 +776,21 @@ export default function KelolaCategoryClient() {
 
     setIsDeleting(true);
     try {
+      const token = csrfToken || (await fetchCsrfToken());
+      if (!token || !selectedCategory) {
+        alert("Gagal mendapatkan CSRF token");
+        return;
+      }
+
       const response = await fetch(
         `/api/categories?id=${selectedCategory.id}`,
         {
           method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            csrf_token: token,
+            id: selectedCategory.id,
+          }),
         }
       );
 

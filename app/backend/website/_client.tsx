@@ -136,7 +136,7 @@ function StatCard({
             <div className="h-9 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
           ) : (
             <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {value.toLocaleString("id-ID")}
+              {Number(value ?? 0).toLocaleString("id-ID")}
             </p>
           )}
         </div>
@@ -307,6 +307,15 @@ function WebsiteFormModal({
 
   const [imageFile, setImageFile] = useState<File | null>(null);
 
+  const normalizeUrl = useCallback((value: string) => {
+    const trimmed = value.trim();
+
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+    return `https://${trimmed}`;
+  }, []);
+
   useEffect(() => {
     if (website) {
       setFormData({
@@ -336,7 +345,8 @@ function WebsiteFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave(formData as any, imageFile);
+    const normalizedUrl = normalizeUrl(formData.url);
+    await onSave({ ...formData, url: normalizedUrl } as any, imageFile);
   };
 
   return (
@@ -379,6 +389,12 @@ function WebsiteFormModal({
                 value={formData.url}
                 onChange={(e) =>
                   setFormData({ ...formData, url: e.target.value })
+                }
+                onBlur={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    url: normalizeUrl(prev.url),
+                  }))
                 }
                 required
                 placeholder="https://example.merauke.go.id"
@@ -811,6 +827,7 @@ export default function KelolaWebsitesClient() {
     inactive: 0,
     featured: 0,
   });
+  const [csrfToken, setCsrfToken] = useState<string>("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Loading states
@@ -830,6 +847,24 @@ export default function KelolaWebsitesClient() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedWebsite, setSelectedWebsite] = useState<Website | null>(null);
 
+  const fetchCsrfToken = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/csrf");
+      const data = await response.json();
+
+      if (data.success && data.data?.csrf_token) {
+        setCsrfToken(data.data.csrf_token);
+        return data.data.csrf_token as string;
+      }
+
+      console.error("Failed to fetch CSRF token:", data.error);
+      return null;
+    } catch (error) {
+      console.error("Error fetching CSRF token:", error);
+      return null;
+    }
+  }, []);
+
   // Fetch websites
   const fetchWebsites = useCallback(async () => {
     setIsLoading(true);
@@ -840,7 +875,9 @@ export default function KelolaWebsitesClient() {
       if (filterStatus !== "all") params.append("is_active", filterStatus);
       if (filterFeatured !== "all") params.append("featured", filterFeatured);
 
-      const response = await fetch(`/api/websites?${params.toString()}`);
+      const response = await fetch(`/api/websites?${params.toString()}`, {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -861,7 +898,9 @@ export default function KelolaWebsitesClient() {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories");
+      const response = await fetch("/api/categories", {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -875,7 +914,9 @@ export default function KelolaWebsitesClient() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch("/api/auth/session");
+        const response = await fetch("/api/auth/session", {
+          credentials: "include",
+        });
         const data = await response.json();
 
         if (!data.authenticated) {
@@ -898,7 +939,10 @@ export default function KelolaWebsitesClient() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
       router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
@@ -909,8 +953,9 @@ export default function KelolaWebsitesClient() {
 
   // Initial fetch
   useEffect(() => {
+    fetchCsrfToken();
     fetchCategories();
-  }, []);
+  }, [fetchCsrfToken]);
 
   // Fetch websites when filters change
   useEffect(() => {
@@ -948,6 +993,12 @@ export default function KelolaWebsitesClient() {
   ) => {
     setIsSaving(true);
     try {
+      const token = csrfToken || (await fetchCsrfToken());
+      if (!token) {
+        alert("Gagal mendapatkan CSRF token");
+        return;
+      }
+
       let imagePath = data.image_url;
 
       if (imageFile) {
@@ -971,8 +1022,13 @@ export default function KelolaWebsitesClient() {
 
       const method = selectedWebsite ? "PUT" : "POST";
       const body = selectedWebsite
-        ? { id: selectedWebsite.id, ...data, image_url: imagePath }
-        : { ...data, image_url: imagePath };
+        ? {
+            id: selectedWebsite.id,
+            ...data,
+            image_url: imagePath,
+            csrf_token: token,
+          }
+        : { ...data, image_url: imagePath, csrf_token: token };
 
       const response = await fetch("/api/websites", {
         method,
@@ -1001,8 +1057,19 @@ export default function KelolaWebsitesClient() {
 
     setIsDeleting(true);
     try {
+      const token = csrfToken || (await fetchCsrfToken());
+      if (!token) {
+        alert("Gagal mendapatkan CSRF token");
+        return;
+      }
+
       const response = await fetch(`/api/websites?id=${selectedWebsite.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          csrf_token: token,
+          id: selectedWebsite.id,
+        }),
       });
 
       const result = await response.json();

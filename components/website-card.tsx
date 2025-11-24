@@ -76,7 +76,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
         <div className="absolute top-4 right-4 z-10">
           <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
             <Star className="w-3 h-3 mr-1 fill-current" />
-            Featured
+            Unggulan
           </Badge>
         </div>
       )}

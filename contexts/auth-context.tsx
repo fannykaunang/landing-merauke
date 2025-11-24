@@ -48,7 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check session
   const checkSession = async () => {
     try {
-      const response = await fetch("/api/auth/session");
+      const response = await fetch("/api/auth/session", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        setUser(null);
+        return false;
+      }
       const data = await response.json();
 
       if (!data.authenticated) {
@@ -76,7 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     setIsLoggingOut(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
       setUser(null);
       router.push("/login");
     } catch (error) {

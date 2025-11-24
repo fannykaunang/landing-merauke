@@ -1,3 +1,5 @@
+// app/api/auth/csrf/route.ts
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createCSRFToken } from "@/lib/auth";
