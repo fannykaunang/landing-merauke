@@ -1,3 +1,6 @@
+// app/api/auth/verify-otp/route.ts
+// VERSI DENGAN COOKIE HELPER
+
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import {
@@ -12,6 +15,7 @@ import {
   verifyCSRFToken,
 } from "@/lib/auth";
 import { sendLoginNotificationEmail } from "@/lib/email";
+import { setSessionCookie } from "@/lib/helpers/cookie-helpers"; // TAMBAHKAN IMPORT INI
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +25,10 @@ export async function POST(request: NextRequest) {
       headersList.get("x-real-ip") ||
       "unknown";
     const userAgent = headersList.get("user-agent") || "unknown";
+
+    console.log("=== VERIFY OTP REQUEST ===");
+    console.log("IP Address:", ipAddress);
+    console.log("User Agent:", userAgent);
 
     // Parse request body
     const body = await request.json();
@@ -57,7 +65,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil((rateLimit.retryAfter || 0) / 60)} menit.`,
+          error: `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(
+            (rateLimit.retryAfter || 0) / 60
+          )} menit.`,
           retryAfter: rateLimit.retryAfter,
         },
         { status: 429 }
@@ -90,6 +100,7 @@ export async function POST(request: NextRequest) {
 
     // Create session
     const sessionId = await createSession(user.id, ipAddress, userAgent);
+    console.log("✅ Session created:", sessionId.substring(0, 10) + "...");
 
     // Update user last login
     await updateUserLastLogin(user.id);
@@ -116,18 +127,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Set session cookie
-    response.cookies.set("session_id", sessionId, {
+    // ============================================
+    // PENTING: Set session cookie menggunakan helper
+    // Ini memastikan konfigurasi cookie konsisten
+    // ============================================
+    setSessionCookie(response, sessionId, 60 * 60 * 24); // 24 jam
+
+    console.log("✅ Login successful for:", sanitizedEmail);
+    console.log("Session cookie set with config:", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 24 hours
-      path: "/",
+      maxAge: 60 * 60 * 24,
     });
 
     return response;
   } catch (error) {
-    console.error("Error in verify-otp:", error);
+    console.error("❌ Error in verify-otp:", error);
     return NextResponse.json(
       { success: false, error: "Terjadi kesalahan server" },
       { status: 500 }
