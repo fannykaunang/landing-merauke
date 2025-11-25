@@ -66,27 +66,25 @@ function parseTags(tags: string | null | undefined): string[] {
 }
 
 // ✅ HELPER: Normalize image path untuk Next.js Image component
-function normalizeImagePath(path: string | null | undefined): string | null {
-  if (!path) return null;
+const resolveImageUrl = (imagePath: string | null) => {
+  if (!imagePath) return null;
 
-  // External URL (http/https)
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
+  // If already full URL, return as is
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
   }
 
-  // Remove 'public/' prefix if exists
-  let normalized = path.replace(/^public\//, "");
+  // Remove leading slashes
+  const normalized = imagePath.replace(/^\/+/, "");
 
-  // Remove all leading slashes
-  normalized = normalized.replace(/^\/+/, "");
+  // ✅ Use API route for uploaded images
+  if (normalized.startsWith("images/")) {
+    return `/api/${normalized}`; // e.g., /api/images/123456-file.jpg
+  }
 
-  // Add single leading slash
-  normalized = "/" + normalized;
-
-  //console.log("Image path normalized:", path, "→", normalized);
-
-  return normalized;
-}
+  // Other static files (logos, etc.)
+  return `/${normalized}`;
+};
 
 export function WebsiteCard({ website }: WebsiteCardProps) {
   const IconComponent = iconMap[website.category_icon || ""] || LayoutGrid;
@@ -95,7 +93,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
   const isFeatured = website.featured === 1 || website.featured === true;
 
   // ✅ NORMALIZE IMAGE PATH (ensure leading slash)
-  const imageSrc = normalizeImagePath(website.image_url);
+  const imageSrc = resolveImageUrl(website.image_url);
 
   const handleVisit = useCallback(
     async (event: MouseEvent<HTMLAnchorElement>) => {

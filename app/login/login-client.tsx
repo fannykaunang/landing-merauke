@@ -68,8 +68,6 @@ export default function LoginClient() {
       const response = await fetch("/api/auth/csrf");
       const data = await response.json();
 
-      console.log("🔒 CSRF Response:", data);
-
       if (data.success) {
         setCsrfToken(data.csrfToken);
         console.log(

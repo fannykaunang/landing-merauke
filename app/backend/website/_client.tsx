@@ -70,11 +70,21 @@ interface Stats {
 
 const resolveImageUrl = (imagePath: string | null) => {
   if (!imagePath) return null;
+
+  // If already full URL, return as is
   if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
     return imagePath;
   }
 
+  // Remove leading slashes
   const normalized = imagePath.replace(/^\/+/, "");
+
+  // ✅ Use API route for uploaded images
+  if (normalized.startsWith("images/")) {
+    return `/api/${normalized}`; // e.g., /api/images/123456-file.jpg
+  }
+
+  // Other static files (logos, etc.)
   return `/${normalized}`;
 };
 
