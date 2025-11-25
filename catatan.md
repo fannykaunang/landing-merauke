@@ -11,3 +11,4 @@
 
 # 25-11-2025
 1. saat buka halaman backend/website di prod masih terlempar ke login. hanya halaman itu saja. cek chat di claude https://claude.ai/chat/475eac5f-34b6-46b2-958b-e3a2e2ad7df0
+2. lanjut chat setelah limit kembali https://claude.ai/chat/475eac5f-34b6-46b2-958b-e3a2e2ad7df0

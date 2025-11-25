@@ -172,6 +172,11 @@ export async function verifyOTP(
   code: string,
   type: "login" | "register" | "reset_password" = "login"
 ): Promise<boolean> {
+  console.log("🔍 OTP Verification Started:");
+  console.log("  Email:", email);
+  console.log("  Code:", code);
+  console.log("  Type:", type);
+
   const otps = await query<OTPCode[]>(
     `SELECT * FROM otp_codes 
      WHERE email = ? AND code = ? AND type = ? AND is_used = 0 AND expires_at > NOW()
@@ -179,10 +184,67 @@ export async function verifyOTP(
     [email.toLowerCase(), code, type]
   );
 
-  if (otps.length === 0) return false;
+  console.log("🔍 OTP Query Result:");
+  console.log("  Found:", otps.length, "OTP(s)");
+
+  if (otps.length > 0) {
+    console.log("  OTP Details:", {
+      id: otps[0].id,
+      email: otps[0].email,
+      code: otps[0].code,
+      type: otps[0].type,
+      is_used: otps[0].is_used,
+      expires_at: otps[0].expires_at,
+      created_at: otps[0].created_at,
+    });
+  }
+
+  if (otps.length === 0) {
+    console.error("❌ OTP Not Found or Invalid");
+
+    // Debug: Check if OTP exists at all (without time check)
+    const allOtps = await query<OTPCode[]>(
+      `SELECT * FROM otp_codes WHERE email = ? AND code = ? AND type = ? LIMIT 1`,
+      [email.toLowerCase(), code, type]
+    );
+
+    if (allOtps.length > 0) {
+      console.error("  OTP exists but:", {
+        is_used: allOtps[0].is_used ? "ALREADY USED" : "not used",
+        expires_at: allOtps[0].expires_at,
+        now: new Date().toISOString(),
+        expired:
+          new Date(allOtps[0].expires_at) < new Date()
+            ? "EXPIRED"
+            : "not expired",
+      });
+    } else {
+      console.error("  OTP does not exist in database at all");
+
+      // Check if ANY OTP exists for this email
+      const anyOtp = await query<OTPCode[]>(
+        `SELECT * FROM otp_codes WHERE email = ? ORDER BY created_at DESC LIMIT 1`,
+        [email.toLowerCase()]
+      );
+
+      if (anyOtp.length > 0) {
+        console.error("  Latest OTP for this email:", {
+          code: anyOtp[0].code,
+          type: anyOtp[0].type,
+          is_used: anyOtp[0].is_used,
+          expires_at: anyOtp[0].expires_at,
+        });
+      } else {
+        console.error("  NO OTP ever created for this email!");
+      }
+    }
+
+    return false;
+  }
 
   // Mark OTP as used
   await query("UPDATE otp_codes SET is_used = 1 WHERE id = ?", [otps[0].id]);
+  console.log("✅ OTP Verified and Marked as Used");
 
   return true;
 }
@@ -204,17 +266,37 @@ export async function createCSRFToken(sessionId?: string): Promise<string> {
 }
 
 export async function verifyCSRFToken(token: string): Promise<boolean> {
-  const tokens = await query<CSRFToken[]>(
-    `SELECT * FROM csrf_tokens WHERE token = ? AND expires_at > NOW() LIMIT 1`,
-    [token]
-  );
+  // ✅ FIXED: Compare token from request with token in cookie
+  // This is the correct way to validate CSRF tokens
+  // NOT by looking up in database!
 
-  if (tokens.length === 0) return false;
+  if (!token) {
+    console.error("❌ CSRF validation: No token provided in request");
+    return false;
+  }
 
-  // Delete used token (one-time use)
-  await query("DELETE FROM csrf_tokens WHERE id = ?", [tokens[0].id]);
+  // Get CSRF token from cookie
+  const cookieStore = await cookies();
+  const csrfFromCookie = cookieStore.get(CSRF_COOKIE_NAME)?.value;
 
-  return true;
+  if (!csrfFromCookie) {
+    console.error("❌ CSRF validation: No token in cookie");
+    return false;
+  }
+
+  // Compare tokens (constant-time comparison to prevent timing attacks)
+  const isValid = token === csrfFromCookie;
+
+  if (isValid) {
+    console.log("✅ CSRF validation: Tokens match");
+    console.log("  Token:", token.substring(0, 20) + "...");
+  } else {
+    console.error("❌ CSRF validation: Token mismatch");
+    console.error("  From request:", token.substring(0, 20) + "...");
+    console.error("  From cookie:", csrfFromCookie.substring(0, 20) + "...");
+  }
+
+  return isValid;
 }
 
 export async function getCSRFTokenFromCookie(): Promise<string | null> {

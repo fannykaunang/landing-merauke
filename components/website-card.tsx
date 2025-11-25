@@ -126,7 +126,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
       {/* Featured Badge */}
       {isFeatured && (
         <div className="absolute top-4 right-4 z-10">
-          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
+          <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
             <Star className="w-3 h-3 mr-1 fill-current" />
             Unggulan
           </Badge>
@@ -134,7 +134,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
       )}
 
       {/* Image */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+      <div className="relative h-48 overflow-hidden bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
         {imageSrc ? (
           <Image
             src={imageSrc}
@@ -157,7 +157,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
             <IconComponent className="w-16 h-16 text-gray-400 dark:text-gray-600" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       <CardContent className="p-5">
@@ -206,7 +206,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
 
         {/* Action Button */}
         <Button
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300"
+          className="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300"
           asChild>
           <a
             href={website.url}

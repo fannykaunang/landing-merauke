@@ -1,4 +1,5 @@
 // app/login/login-client.tsx
+// ✅ FIXED: Remove fetchCSRFToken before submit (prevents race condition)
 
 "use client";
 
@@ -66,11 +67,20 @@ export default function LoginClient() {
     try {
       const response = await fetch("/api/auth/csrf");
       const data = await response.json();
+
+      console.log("🔒 CSRF Response:", data);
+
       if (data.success) {
-        setCsrfToken(data.data.csrf_token);
+        setCsrfToken(data.csrfToken);
+        console.log(
+          "✅ CSRF token fetched:",
+          data.csrfToken?.substring(0, 20) + "..."
+        );
+      } else {
+        console.error("❌ CSRF fetch failed:", data);
       }
     } catch (err) {
-      console.error("Failed to fetch CSRF token:", err);
+      console.error("❌ Failed to fetch CSRF token:", err);
     }
   }, []);
 
@@ -98,11 +108,26 @@ export default function LoginClient() {
       return;
     }
 
+    // ✅ Validate CSRF token before sending
+    if (!csrfToken) {
+      console.error("❌ No CSRF token available!");
+      setError({
+        type: "error",
+        message: "CSRF token tidak tersedia. Coba refresh halaman.",
+      });
+      return;
+    }
+
+    console.log(
+      "🔒 Sending request with CSRF token:",
+      csrfToken.substring(0, 20) + "..."
+    );
+
     setIsLoading(true);
 
     try {
-      // Refresh CSRF token before request
-      await fetchCSRFToken();
+      // ✅ CRITICAL FIX: DO NOT refresh CSRF token before submit!
+      // This was causing race condition - token changes before request is sent
 
       const response = await fetch("/api/auth/request-otp", {
         method: "POST",
@@ -134,7 +159,8 @@ export default function LoginClient() {
         return;
       }
 
-      // Refresh CSRF token for next step
+      // ✅ ONLY refresh CSRF token AFTER successful OTP request
+      // This gets a fresh token for the verify-otp step
       await fetchCSRFToken();
 
       setStep("otp");
@@ -205,6 +231,21 @@ export default function LoginClient() {
       return;
     }
 
+    // ✅ Validate CSRF token
+    if (!csrfToken) {
+      console.error("❌ No CSRF token available for OTP verification!");
+      setError({
+        type: "error",
+        message: "CSRF token tidak tersedia. Coba refresh halaman.",
+      });
+      return;
+    }
+
+    console.log(
+      "🔒 Verifying OTP with CSRF token:",
+      csrfToken.substring(0, 20) + "..."
+    );
+
     setIsLoading(true);
     setError(null);
 
@@ -258,7 +299,11 @@ export default function LoginClient() {
     setError(null);
 
     try {
+      // ✅ Get fresh token for resend
       await fetchCSRFToken();
+
+      // ✅ Wait a bit to ensure token is set
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const response = await fetch("/api/auth/request-otp", {
         method: "POST",
@@ -276,7 +321,9 @@ export default function LoginClient() {
         return;
       }
 
+      // ✅ Refresh token again for next verify
       await fetchCSRFToken();
+
       setCountdown(300);
       setCanResend(false);
       setOtp(["", "", "", "", "", ""]);
