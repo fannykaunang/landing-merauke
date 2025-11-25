@@ -139,15 +139,21 @@ export default function SettingsPageClient() {
       const response = await fetch("/api/auth/csrf");
       const data = await response.json();
 
-      if (data.success && data.data?.csrf_token) {
-        setCsrfToken(data.data.csrf_token);
-        return data.data.csrf_token as string;
-      }
+      console.log("🔒 CSRF Response:", data);
 
-      console.error("Failed to fetch CSRF token:", data.error);
-      return null;
+      if (data.success && data.csrfToken) {
+        setCsrfToken(data.csrfToken);
+        console.log(
+          "✅ CSRF token fetched:",
+          data.csrfToken.substring(0, 20) + "..."
+        );
+        return data.csrfToken; // ✅ Return token on success
+      } else {
+        console.error("❌ CSRF response invalid:", data);
+        return null;
+      }
     } catch (error) {
-      console.error("Error fetching CSRF token:", error);
+      console.error("❌ Failed to fetch CSRF token:", error);
       return null;
     }
   }, []);

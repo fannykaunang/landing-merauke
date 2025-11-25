@@ -1,5 +1,5 @@
 // app/api/auth/verify-otp/route.ts
-// VERSI DENGAN COOKIE HELPER
+// ✅ FINAL CORRECT VERSION - Sets session_id cookie properly
 
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
@@ -15,7 +15,7 @@ import {
   verifyCSRFToken,
 } from "@/lib/auth";
 import { sendLoginNotificationEmail } from "@/lib/email";
-import { setSessionCookie } from "@/lib/helpers/cookie-helpers"; // TAMBAHKAN IMPORT INI
+import { setSessionCookie } from "@/lib/helpers/cookie-helpers";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,13 +34,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, otp, csrf_token } = body;
 
+    console.log("Request data:", {
+      email: email,
+      otp_length: otp?.length,
+      csrf_token_length: csrf_token?.length,
+    });
+
     // Validate CSRF token
     if (!csrf_token || !(await verifyCSRFToken(csrf_token))) {
+      console.error("❌ CSRF validation failed");
       return NextResponse.json(
         { success: false, error: "Invalid CSRF token" },
         { status: 403 }
       );
     }
+
+    console.log("✅ CSRF validation passed");
 
     // Validate inputs
     if (!email || !validateEmail(email)) {
@@ -85,8 +94,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify OTP
+    console.log("🔍 Verifying OTP...");
     const isValidOTP = await verifyOTP(sanitizedEmail, otp, "login");
+
     if (!isValidOTP) {
+      console.error("❌ OTP verification failed");
       await recordLoginAttempt(sanitizedEmail, ipAddress, userAgent, false);
       return NextResponse.json(
         {
@@ -98,9 +110,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log("✅ OTP verified successfully");
+
     // Create session
     const sessionId = await createSession(user.id, ipAddress, userAgent);
-    console.log("✅ Session created:", sessionId.substring(0, 10) + "...");
+    console.log("✅ Session created:", sessionId.substring(0, 20) + "...");
 
     // Update user last login
     await updateUserLastLogin(user.id);
@@ -128,18 +142,23 @@ export async function POST(request: NextRequest) {
     });
 
     // ============================================
-    // PENTING: Set session cookie menggunakan helper
-    // Ini memastikan konfigurasi cookie konsisten
+    // 🔥 CRITICAL: Set session cookie properly!
     // ============================================
-    setSessionCookie(response, sessionId, 60 * 60 * 24); // 24 jam
+    // Use helper function untuk consistency
+    // maxAge: 24 hours = 60 * 60 * 24 seconds
+    setSessionCookie(response, sessionId, 60 * 60 * 24);
 
-    console.log("✅ Login successful for:", sanitizedEmail);
-    console.log("Session cookie set with config:", {
+    console.log("✅ Session cookie set");
+    console.log("Cookie config:", {
+      name: "session_id", // ← CRITICAL: Must be 'session_id' not 'session'
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "lax", // ← CRITICAL: Must be 'lax' not 'strict'
       maxAge: 60 * 60 * 24,
+      path: "/",
     });
+
+    console.log("✅ Login successful for:", sanitizedEmail);
 
     return response;
   } catch (error) {

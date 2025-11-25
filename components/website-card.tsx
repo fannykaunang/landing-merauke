@@ -83,7 +83,7 @@ function normalizeImagePath(path: string | null | undefined): string | null {
   // Add single leading slash
   normalized = "/" + normalized;
 
-  console.log("Image path normalized:", path, "→", normalized);
+  //console.log("Image path normalized:", path, "→", normalized);
 
   return normalized;
 }

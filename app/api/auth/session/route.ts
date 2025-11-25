@@ -14,7 +14,7 @@ interface Session {
 
 interface User {
   id: number;
-  username: string;
+  name: string;
   email: string;
   role: string;
   created_at: string;
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Get user data
     const users = (await query(
-      "SELECT id, username, email, role, created_at FROM users WHERE id = ?",
+      "SELECT id, name, email, role, created_at FROM users WHERE id = ?",
       [session.user_id]
     )) as User[];
 
@@ -84,19 +84,14 @@ export async function GET(request: NextRequest) {
     }
 
     const user = users[0];
-    console.log(
-      "✅ Session valid for user:",
-      user.username,
-      "(ID:",
-      user.id + ")"
-    );
+    console.log("✅ Session valid for user:", user.name, "(ID:", user.id + ")");
 
     return NextResponse.json({
       success: true,
       authenticated: true,
       user: {
         id: user.id,
-        username: user.username,
+        name: user.name,
         email: user.email,
         role: user.role,
         created_at: user.created_at,
