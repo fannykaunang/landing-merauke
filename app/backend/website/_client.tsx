@@ -818,7 +818,6 @@ function TableSkeleton() {
 export default function KelolaWebsitesClient() {
   // Data states
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
   const [websites, setWebsites] = useState<Website[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -828,7 +827,6 @@ export default function KelolaWebsitesClient() {
     featured: 0,
   });
   const [csrfToken, setCsrfToken] = useState<string>("");
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -911,45 +909,30 @@ export default function KelolaWebsitesClient() {
     }
   };
 
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const response = await fetch("/api/auth/session", {
-          credentials: "include",
-        });
-        const data = await response.json();
+  // useEffect(() => {
+  //   const checkSession = async () => {
+  //     try {
+  //       const response = await fetch("/api/auth/session", {
+  //         credentials: "include",
+  //       });
+  //       const data = await response.json();
 
-        if (!data.authenticated) {
-          router.push("/login");
-          return;
-        }
+  //       if (!data.authenticated) {
+  //         router.push("/login");
+  //         return;
+  //       }
 
-        setUser(data.data.user);
-      } catch (error) {
-        console.error("Session check error:", error);
-        router.push("/login");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  //       setUser(data.data.user);
+  //     } catch (error) {
+  //       console.error("Session check error:", error);
+  //       router.push("/login");
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
 
-    checkSession();
-  }, [router]);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      router.push("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+  //   checkSession();
+  // }, [router]);
 
   // Initial fetch
   useEffect(() => {

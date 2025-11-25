@@ -33,17 +33,69 @@ const iconMap: Record<string, LucideIcon> = {
   "shopping-cart": ShoppingCart,
 };
 
+// ✅ HELPER: Parse tags dengan aman
+function parseTags(tags: string | null | undefined): string[] {
+  if (!tags) return [];
+
+  try {
+    if (typeof tags === "string" && !tags.trim()) return [];
+    if (Array.isArray(tags)) return tags;
+
+    if (typeof tags === "string" && tags.trim().startsWith("[")) {
+      return JSON.parse(tags);
+    }
+
+    if (typeof tags === "string") {
+      return tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error parsing tags:", error);
+    if (typeof tags === "string") {
+      return tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+}
+
+// ✅ HELPER: Normalize image path untuk Next.js Image component
+function normalizeImagePath(path: string | null | undefined): string | null {
+  if (!path) return null;
+
+  // External URL (http/https)
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  // Remove 'public/' prefix if exists
+  let normalized = path.replace(/^public\//, "");
+
+  // Remove all leading slashes
+  normalized = normalized.replace(/^\/+/, "");
+
+  // Add single leading slash
+  normalized = "/" + normalized;
+
+  console.log("Image path normalized:", path, "→", normalized);
+
+  return normalized;
+}
+
 export function WebsiteCard({ website }: WebsiteCardProps) {
   const IconComponent = iconMap[website.category_icon || ""] || LayoutGrid;
-  const tags = website.tags ? JSON.parse(website.tags) : [];
+
+  const tags = parseTags(website.tags);
   const isFeatured = website.featured === 1 || website.featured === true;
-  const imageSrc = website.image_url
-    ? website.image_url.startsWith("http")
-      ? website.image_url
-      : website.image_url.startsWith("/")
-      ? website.image_url
-      : `/${website.image_url}`
-    : null;
+
+  // ✅ NORMALIZE IMAGE PATH (ensure leading slash)
+  const imageSrc = normalizeImagePath(website.image_url);
 
   const handleVisit = useCallback(
     async (event: MouseEvent<HTMLAnchorElement>) => {
@@ -74,7 +126,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
       {/* Featured Badge */}
       {isFeatured && (
         <div className="absolute top-4 right-4 z-10">
-          <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
+          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
             <Star className="w-3 h-3 mr-1 fill-current" />
             Unggulan
           </Badge>
@@ -82,7 +134,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
       )}
 
       {/* Image */}
-      <div className="relative h-48 overflow-hidden bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
         {imageSrc ? (
           <Image
             src={imageSrc}
@@ -90,14 +142,22 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={(e) => {
+              console.error(
+                "Image load error for:",
+                website.title,
+                "Path:",
+                imageSrc
+              );
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <IconComponent className="w-16 h-16 text-gray-400 dark:text-gray-600" />
           </div>
         )}
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       <CardContent className="p-5">
@@ -146,7 +206,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
 
         {/* Action Button */}
         <Button
-          className="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300"
           asChild>
           <a
             href={website.url}

@@ -1,40 +1,27 @@
 // app/api/auth/csrf/route.ts
+// ✅ FIXED: Add maxAge parameter to setCsrfTokenCookie
 
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createCSRFToken } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
+import { setCsrfTokenCookie } from "@/lib/helpers/cookie-helpers";
 
-export async function GET() {
-  try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
+export async function GET(request: NextRequest) {
+  console.log("🔐 CSRF token request started");
 
-    // Generate new CSRF token
-    const csrfToken = await createCSRFToken(sessionId);
+  // Generate CSRF token
+  const csrfToken = randomBytes(32).toString("hex");
+  console.log("✅ CSRF token generated:", csrfToken.substring(0, 20) + "...");
 
-    // Create response
-    const response = NextResponse.json({
-      success: true,
-      data: {
-        csrf_token: csrfToken,
-      },
-    });
+  // Create response
+  const response = NextResponse.json({
+    success: true,
+    csrfToken,
+  });
 
-    // Set CSRF cookie (readable by JavaScript for forms)
-    response.cookies.set("csrf_token", csrfToken, {
-      httpOnly: false, // Must be readable by JS
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 24 hours
-      path: "/",
-    });
+  // ✅ FIXED: Add maxAge parameter (7 days = 60 * 60 * 24 * 7)
+  setCsrfTokenCookie(response, csrfToken, 60 * 60 * 24 * 7);
 
-    return response;
-  } catch (error) {
-    console.error("Error generating CSRF token:", error);
-    return NextResponse.json(
-      { success: false, error: "Terjadi kesalahan server" },
-      { status: 500 }
-    );
-  }
+  console.log("✅ CSRF token cookie set");
+
+  return response;
 }

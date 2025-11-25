@@ -1,101 +1,101 @@
 // lib/cookie-helpers.ts
-// Helper functions untuk cookie configuration yang konsisten
+// ✅ FIXED: Use 'session_id' consistently (not 'session')
 
 import { NextResponse } from "next/server";
-import { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
 /**
- * Konfigurasi cookie yang aman dan konsisten untuk production
- */
-export function getSecureCookieOptions(options?: {
-  maxAge?: number;
-  httpOnly?: boolean;
-  sameSite?: "strict" | "lax" | "none";
-}): Partial<ResponseCookie> {
-  const isProduction = process.env.NODE_ENV === "production";
-  const maxAge = options?.maxAge ?? 60 * 60 * 24 * 7; // Default 7 hari
-  const httpOnly = options?.httpOnly ?? true;
-
-  // Untuk production dengan HTTPS
-  // Jika menggunakan reverse proxy (nginx), pastikan X-Forwarded-Proto di-forward
-  const sameSite = options?.sameSite ?? "lax";
-
-  const cookieConfig: Partial<ResponseCookie> = {
-    httpOnly,
-    secure: isProduction, // true di production
-    sameSite,
-    maxAge,
-    path: "/",
-  };
-
-  // Uncomment jika menggunakan subdomain dan perlu share cookie
-  // if (process.env.COOKIE_DOMAIN) {
-  //   cookieConfig.domain = process.env.COOKIE_DOMAIN; // e.g., ".merauke.go.id"
-  // }
-
-  return cookieConfig;
-}
-
-/**
- * Set session cookie dengan konfigurasi yang benar
+ * Set session cookie with consistent settings
+ * Cookie name: 'session_id' (to match database and existing implementation)
  */
 export function setSessionCookie(
   response: NextResponse,
   sessionId: string,
-  maxAge?: number
-): void {
-  const options = getSecureCookieOptions({
+  maxAge: number
+) {
+  response.cookies.set("session_id", sessionId, {
+    // ✅ Changed from 'session' to 'session_id'
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax", // ✅ Allow cookie on navigation/reload
+    path: "/",
+    maxAge: maxAge,
+  });
+
+  console.log("✅ Session cookie set:", {
+    name: "session_id",
+    sessionId: sessionId.substring(0, 20) + "...",
     maxAge,
-    sameSite: "lax",
+    expires: new Date(Date.now() + maxAge * 1000).toISOString(),
   });
 
-  console.log("Setting session cookie with options:", {
-    ...options,
-    sessionId: sessionId.substring(0, 10) + "...",
-  });
-
-  response.cookies.set("session_id", sessionId, options);
+  return response;
 }
 
 /**
- * Set CSRF token cookie (perlu dibaca oleh JavaScript)
+ * Clear session cookie
  */
-export function setCsrfTokenCookie(
-  response: NextResponse,
-  csrfToken: string
-): void {
-  const options = getSecureCookieOptions({
-    httpOnly: false, // CSRF token perlu dibaca oleh JS
-    maxAge: 60 * 60 * 24, // 24 jam
-    sameSite: "lax",
-  });
-
-  response.cookies.set("csrf_token", csrfToken, options);
-}
-
-/**
- * Clear session cookie (untuk logout)
- */
-export function clearSessionCookie(response: NextResponse): void {
+export function clearSessionCookie(response: NextResponse) {
   response.cookies.set("session_id", "", {
+    // ✅ Changed from 'session' to 'session_id'
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 0,
     path: "/",
+    maxAge: 0,
   });
+
+  console.log("🗑️ Session cookie cleared");
+
+  return response;
+}
+
+/**
+ * Set CSRF token cookie
+ */
+export function setCsrfTokenCookie(
+  response: NextResponse,
+  csrfToken: string,
+  maxAge: number
+) {
+  response.cookies.set("csrf_token", csrfToken, {
+    httpOnly: false, // Client needs to read this
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: maxAge,
+  });
+
+  console.log("✅ CSRF token cookie set");
+
+  return response;
 }
 
 /**
  * Clear CSRF token cookie
  */
-export function clearCsrfTokenCookie(response: NextResponse): void {
+export function clearCsrfTokenCookie(response: NextResponse) {
   response.cookies.set("csrf_token", "", {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 0,
     path: "/",
+    maxAge: 0,
   });
+
+  console.log("🗑️ CSRF token cookie cleared");
+
+  return response;
+}
+
+/**
+ * Get cookie config for consistent settings across the app
+ */
+export function getCookieConfig(maxAge: number) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: maxAge,
+  };
 }
