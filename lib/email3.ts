@@ -39,7 +39,7 @@ export async function sendOTPEmail(
     reset_password: "Reset Password",
   };
 
-  const subject = `[Portal Merauke] Kode OTP ${typeLabels[type]} Anda`;
+  const subject = `[merauke.go.id] Kode OTP ${typeLabels[type]} Anda`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -147,7 +147,7 @@ Dinas Komunikasi dan Informatika
 
   try {
     await transporter.sendMail({
-      from: `"Portal Merauke" <${
+      from: `"merauke.go.id" <${
         process.env.SMTP_FROM || process.env.SMTP_USER
       }>`,
       to,
@@ -170,7 +170,7 @@ export async function sendLoginNotificationEmail(
   ipAddress: string,
   userAgent: string
 ): Promise<boolean> {
-  const subject = "[Portal Merauke] Notifikasi Login Baru";
+  const subject = "[merauke.go.id] Notifikasi Login Baru";
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -228,7 +228,7 @@ export async function sendLoginNotificationEmail(
 
   try {
     await transporter.sendMail({
-      from: `"Portal Merauke" <${
+      from: `"merauke.go.id" <${
         process.env.SMTP_FROM || process.env.SMTP_USER
       }>`,
       to,

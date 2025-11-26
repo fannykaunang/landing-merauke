@@ -826,7 +826,7 @@ export default function KelolaCategoryClient() {
             Kelola Kategori
           </h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Kelola kategori untuk mengelompokkan website di Portal Merauke
+            Kelola kategori untuk mengelompokkan website di merauke.go.id
           </p>
         </div>
 

@@ -11,8 +11,9 @@ import {
   isCategorySlugExists,
   updateCategory,
 } from "@/lib/models/category-model";
+import { validateAdminSession } from "@/lib/session-validator";
 
-// GET - Fetch all categories
+// GET - Fetch all categories (PUBLIC - No auth required)
 export async function GET() {
   try {
     const { categories, stats } = await getCategories();
@@ -34,9 +35,25 @@ export async function GET() {
   }
 }
 
-// POST - Create new category
+// POST - Create new category (PROTECTED - Admin only)
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin creating category:", user?.email);
+
     const body = await request.json();
     const { name, slug, description, icon } = body;
 
@@ -81,9 +98,25 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update category
+// PUT - Update category (PROTECTED - Admin only)
 export async function PUT(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin updating category:", user?.email);
+
     const body = await request.json();
     const { id, name, slug, description, icon } = body;
 
@@ -144,9 +177,25 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Delete category
+// DELETE - Delete category (PROTECTED - Admin only)
 export async function DELETE(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin deleting category:", user?.email);
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

@@ -65,7 +65,7 @@ export interface User {
   email_verified: boolean;
   image: string | null;
   is_active: boolean;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
   last_login: string | null;
   created_at: string;
   updated_at: string;
@@ -86,7 +86,7 @@ export interface OTPCode {
   id: number;
   email: string;
   code: string;
-  type: 'login' | 'register' | 'reset_password';
+  type: "login" | "register" | "reset_password";
   expires_at: string;
   is_used: boolean;
   created_at: string;
@@ -113,5 +113,18 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  role: "admin" | "user";
+  email_verified: boolean;
+  is_active: boolean;
+  image: string | null;
+  created_at: string;
+  updated_at: string;
+  last_login: string | null;
 }

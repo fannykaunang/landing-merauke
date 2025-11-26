@@ -1,16 +1,16 @@
-// app/api/settings/app/route.ts
+// app/api/settings/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import {
   getAppSettings,
   updateAppSettings,
   initializeAppSettings,
   AppSettingsUpdate,
 } from "@/lib/models/app-settings-model";
+import { validateAdminSession } from "@/lib/session-validator";
 import { z } from "zod";
 
-// Validation schema for settings update (removed auto_approve_laporan and reminder_time)
+// Validation schema for settings update
 const settingsUpdateSchema = z.object({
   // Aplikasi Info
   nama_aplikasi: z.string().min(1).max(100).optional(),
@@ -70,7 +70,7 @@ const settingsUpdateSchema = z.object({
   lockout_duration: z.number().int().min(1).max(60).optional(),
   enable_2fa: z.boolean().optional(),
 
-  // Laporan Settings (only max_edit_days and working_days)
+  // Laporan Settings
   max_edit_days: z.number().int().min(0).max(30).optional(),
   working_days: z.array(z.number().int().min(0).max(6)).nullable().optional(),
 
@@ -101,7 +101,7 @@ const settingsUpdateSchema = z.object({
 });
 
 /**
- * GET /api/settings/app - Get app settings
+ * GET /api/settings - Get app settings (PUBLIC - No auth required)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -133,28 +133,25 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * PUT /api/settings/app - Update app settings
+ * PUT /api/settings - Update app settings (PROTECTED - Admin only)
  */
 export async function PUT(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
 
-    if (!user) {
+    if (!isValid) {
       return NextResponse.json(
-        { success: false, message: "Harus login untuk mengakses" },
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
         { status: 401 }
       );
     }
 
-    if (user.role !== "admin") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Hanya admin yang dapat mengakses pengaturan",
-        },
-        { status: 403 }
-      );
-    }
+    console.log("✅ Admin updating settings:", user?.email);
 
     const body = await request.json();
 
@@ -174,7 +171,7 @@ export async function PUT(request: NextRequest) {
     const data = validationResult.data as AppSettingsUpdate;
 
     // Update settings
-    if (!user.id) {
+    if (!user?.id) {
       return NextResponse.json(
         {
           error: "Session tidak valid atau id tidak tersedia",

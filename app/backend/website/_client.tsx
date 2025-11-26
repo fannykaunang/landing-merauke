@@ -1097,7 +1097,7 @@ export default function KelolaWebsitesClient() {
             Kelola Websites
           </h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Kelola semua website dan aplikasi yang terdaftar di Portal Merauke
+            Kelola semua website dan aplikasi yang terdaftar di merauke.go.id
           </p>
         </div>
 

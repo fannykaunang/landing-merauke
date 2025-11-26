@@ -1,4 +1,5 @@
 // app/api/websites/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import {
   createWebsite,
@@ -7,20 +8,31 @@ import {
   getWebsites,
   updateWebsite,
 } from "@/lib/models/website-model";
+import { validateAdminSession, getCurrentUser } from "@/lib/session-validator";
 
-// GET - Fetch all websites with filters
+// ============================================
+// GET - Fetch all websites (PUBLIC - No auth required)
+// ============================================
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
     const featured = searchParams.get("featured");
-    const isActive = searchParams.get("is_active"); // 'all' | '1' | '0'
+    const isActive = searchParams.get("is_active");
 
     const pageParam = parseInt(searchParams.get("page") || "1");
     const limitParam = parseInt(searchParams.get("limit") || "50");
     const page = Number.isNaN(pageParam) ? 1 : pageParam;
     const limit = Number.isNaN(limitParam) ? 50 : limitParam;
+
+    // ✅ Optional: Get current user for logging (tidak wajib login)
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      console.log("📖 User browsing websites:", currentUser.email);
+    } else {
+      console.log("📖 Anonymous user browsing websites");
+    }
 
     const { websites, stats, total } = await getWebsites({
       search,
@@ -59,9 +71,27 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new website
+// ============================================
+// POST - Create new website (PROTECTED - Admin only)
+// ============================================
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin creating website:", user?.email);
+
     const body = await request.json();
     const {
       title,
@@ -72,7 +102,6 @@ export async function POST(request: NextRequest) {
       tags,
       featured,
       is_active,
-      created_by,
     } = body;
 
     // Validation
@@ -83,7 +112,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert new website
+    // Insert new website with creator info
     const insertId = await createWebsite({
       title,
       description,
@@ -93,7 +122,7 @@ export async function POST(request: NextRequest) {
       tags,
       featured,
       is_active,
-      created_by,
+      created_by: user?.id.toString(), // ✅ Track who created it
     });
 
     return NextResponse.json({
@@ -110,9 +139,27 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update website
+// ============================================
+// PUT - Update website (PROTECTED - Admin only)
+// ============================================
 export async function PUT(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin updating website:", user?.email);
+
     const body = await request.json();
     const {
       id,
@@ -170,9 +217,27 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Delete website
+// ============================================
+// DELETE - Delete website (PROTECTED - Admin only)
+// ============================================
 export async function DELETE(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin deleting website:", user?.email);
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

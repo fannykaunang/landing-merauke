@@ -3,9 +3,26 @@
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { validateAdminSession } from "@/lib/session-validator";
 
 export async function POST(request: Request) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin uploading file:", user?.email);
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 

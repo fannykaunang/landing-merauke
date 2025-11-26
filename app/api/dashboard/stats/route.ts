@@ -2,12 +2,29 @@
 
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { validateAdminSession } from "@/lib/session-validator";
 
 // ============================================
-// GET - Fetch Dashboard Statistics
+// GET - Fetch Dashboard Statistics (PROTECTED - Admin only)
 // ============================================
 export async function GET() {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized - Admin access required",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin accessing dashboard stats:", user?.email);
+
     // Get total websites (active only)
     const websitesResult = await query<[{ total: number }]>(`
       SELECT COUNT(*) as total 

@@ -34,7 +34,7 @@ export async function sendOTPEmail(
     reset_password: "Reset Password",
   };
 
-  const subject = `[Portal Merauke] Kode OTP ${typeLabels[type]} Anda`;
+  const subject = `[merauke.go.id] Kode OTP ${typeLabels[type]} Anda`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -74,7 +74,9 @@ export async function sendOTPEmail(
                 Kode Verifikasi ${typeLabels[type]}
               </h2>
               <p style="margin: 0 0 32px; color: #64748b; font-size: 15px; line-height: 1.6; text-align: center;">
-                Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[type].toLowerCase()}. Kode ini berlaku selama <strong>5 menit</strong>.
+                Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[
+                  type
+                ].toLowerCase()}. Kode ini berlaku selama <strong>5 menit</strong>.
               </p>
               
               <!-- OTP Code Box -->
@@ -123,7 +125,9 @@ Portal Website & Aplikasi Kabupaten Merauke
 
 Kode Verifikasi ${typeLabels[type]}
 
-Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[type].toLowerCase()}:
+Gunakan kode OTP di bawah ini untuk melanjutkan proses ${typeLabels[
+    type
+  ].toLowerCase()}:
 
 ${otp}
 
@@ -138,7 +142,9 @@ Dinas Komunikasi dan Informatika
 
   try {
     await transporter.sendMail({
-      from: `"Portal Merauke" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: `"merauke.go.id" <${
+        process.env.SMTP_FROM || process.env.SMTP_USER
+      }>`,
       to,
       subject,
       text: textContent,
@@ -159,8 +165,8 @@ export async function sendLoginNotificationEmail(
   ipAddress: string,
   userAgent: string
 ): Promise<boolean> {
-  const subject = "[Portal Merauke] Notifikasi Login Baru";
-  
+  const subject = "[merauke.go.id] Notifikasi Login Baru";
+
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="id">
@@ -190,7 +196,10 @@ export async function sendLoginNotificationEmail(
               </p>
               <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 16px 0;">
                 <p style="margin: 0 0 8px; color: #475569; font-size: 14px;">
-                  <strong>Waktu:</strong> ${new Date().toLocaleString("id-ID", { dateStyle: "full", timeStyle: "short" })}
+                  <strong>Waktu:</strong> ${new Date().toLocaleString("id-ID", {
+                    dateStyle: "full",
+                    timeStyle: "short",
+                  })}
                 </p>
                 <p style="margin: 0 0 8px; color: #475569; font-size: 14px;">
                   <strong>IP Address:</strong> ${ipAddress}
@@ -214,7 +223,9 @@ export async function sendLoginNotificationEmail(
 
   try {
     await transporter.sendMail({
-      from: `"Portal Merauke" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: `"merauke.go.id" <${
+        process.env.SMTP_FROM || process.env.SMTP_USER
+      }>`,
       to,
       subject,
       html: htmlContent,

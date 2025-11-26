@@ -44,7 +44,7 @@ export async function sendOTPEmail(
     reset_password: "Reset Password",
   };
 
-  const subject = `[Portal Merauke] Kode OTP ${typeLabels[type]} Anda`;
+  const subject = `[merauke.go.id] Kode OTP ${typeLabels[type]} Anda`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -66,7 +66,7 @@ export async function sendOTPEmail(
                 <img width="50" height="50" src="https://izakod-asn.merauke.go.id/Lambang_Kabupaten_Merauke.png">
               </div>
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
-                Portal Website & Aplikasi
+                merauke.go.id
               </h1>
               <p style="margin: 8px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">
                 Kabupaten Merauke
@@ -128,7 +128,7 @@ export async function sendOTPEmail(
   `;
 
   const textContent = `
-Portal Website & Aplikasi Kabupaten Merauke
+merauke.go.id
 
 Kode Verifikasi ${typeLabels[type]}
 
@@ -157,7 +157,7 @@ Dinas Komunikasi dan Informatika
     console.log("SMTP_USER:", process.env.SMTP_USER);
 
     await transporter.sendMail({
-      from: `"Portal Merauke" <${
+      from: `"merauke.go.id" <${
         process.env.SMTP_FROM || process.env.SMTP_USER
       }>`,
       to,
@@ -180,7 +180,7 @@ export async function sendLoginNotificationEmail(
   ipAddress: string,
   userAgent: string
 ): Promise<boolean> {
-  const subject = "[Portal Merauke] Notifikasi Login Baru";
+  const subject = "[merauke.go.id] Notifikasi Login Baru";
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -197,7 +197,7 @@ export async function sendLoginNotificationEmail(
           <tr>
             <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); border-radius: 16px 16px 0 0;">
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
-                Portal Website & Aplikasi
+                merauke.go.id
               </h1>
             </td>
           </tr>
@@ -239,7 +239,7 @@ export async function sendLoginNotificationEmail(
   try {
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `"Portal Merauke" <${
+      from: `"merauke.go.id" <${
         process.env.SMTP_FROM || process.env.SMTP_USER
       }>`,
       to,

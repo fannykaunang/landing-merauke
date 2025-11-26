@@ -11,12 +11,29 @@ import {
   isValidEmail,
   updateUser,
 } from "@/lib/models/user-model";
+import { validateAdminSession } from "@/lib/session-validator";
 
 // ============================================
-// GET - Fetch all users
+// GET - Fetch all users (PROTECTED - Admin only)
 // ============================================
 export async function GET() {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin access granted:", user?.email);
+
     const { users, stats } = await getUsersWithStats();
 
     return NextResponse.json({
@@ -37,10 +54,26 @@ export async function GET() {
 }
 
 // ============================================
-// POST - Create new user
+// POST - Create new user (PROTECTED - Admin only)
 // ============================================
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin creating user:", user?.email);
+
     const body = await request.json();
     const { name, email, role, is_active, email_verified, image } = body;
 
@@ -101,10 +134,26 @@ export async function POST(request: NextRequest) {
 }
 
 // ============================================
-// PUT - Update user
+// PUT - Update user (PROTECTED - Admin only)
 // ============================================
 export async function PUT(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin updating user:", user?.email);
+
     const body = await request.json();
     const { id, name, role, is_active, email_verified, image } = body;
 
@@ -165,10 +214,26 @@ export async function PUT(request: NextRequest) {
 }
 
 // ============================================
-// DELETE - Delete user
+// DELETE - Delete user (PROTECTED - Admin only)
 // ============================================
 export async function DELETE(request: NextRequest) {
   try {
+    // ✅ Validate admin session
+    const { isValid, user, error } = await validateAdminSession();
+
+    if (!isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error || "Unauthorized",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ Admin deleting user:", user?.email);
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -189,14 +254,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Optional: Prevent deleting yourself (uncomment if you have session management)
-    // const session = await getServerSession(authOptions);
-    // if (session?.user?.email === existing[0].email) {
-    //   return NextResponse.json(
-    //     { success: false, error: "Tidak dapat menghapus akun Anda sendiri" },
-    //     { status: 400 }
-    //   );
-    // }
+    // ✅ Prevent deleting yourself
+    if (user && existing.id === user.id) {
+      return NextResponse.json(
+        { success: false, error: "Tidak dapat menghapus akun Anda sendiri" },
+        { status: 400 }
+      );
+    }
 
     // Check if this is the last admin
     const adminCount = await getAdminCount();
