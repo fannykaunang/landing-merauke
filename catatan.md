@@ -13,3 +13,6 @@
 1. saat buka halaman backend/website di prod masih terlempar ke login. hanya halaman itu saja. cek chat di claude https://claude.ai/chat/475eac5f-34b6-46b2-958b-e3a2e2ad7df0
 2. lanjut chat setelah limit kembali https://claude.ai/chat/475eac5f-34b6-46b2-958b-e3a2e2ad7df0
 3. tanya claude ketika upload gambar kenapa harus restart pm2 lagi?
+
+# 26-11-2025
+1. tambah page metadata di dashboard. lihat chat di claude https://claude.ai/chat/968036cb-019a-4261-9c0e-8367a11e5820

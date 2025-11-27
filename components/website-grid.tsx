@@ -126,8 +126,12 @@ export function WebsiteGrid({
 
         {/* Website Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {websites.map((website) => (
-            <WebsiteCard key={website.id} website={website} />
+          {websites.map((website, index) => (
+            <WebsiteCard
+              key={website.id}
+              website={website}
+              priority={index < 4}
+            />
           ))}
         </div>
 

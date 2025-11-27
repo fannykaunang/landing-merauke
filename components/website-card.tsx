@@ -3,7 +3,7 @@
 "use client";
 
 import Image from "next/image";
-import { MouseEvent, useCallback } from "react";
+import { MouseEvent, useCallback, useState } from "react";
 import {
   ExternalLink,
   Star,
@@ -22,6 +22,7 @@ import { Website } from "@/lib/types";
 
 interface WebsiteCardProps {
   website: Website;
+  priority?: boolean;
 }
 
 // Icon mapping
@@ -86,8 +87,10 @@ const resolveImageUrl = (imagePath: string | null) => {
   return `/${normalized}`;
 };
 
-export function WebsiteCard({ website }: WebsiteCardProps) {
+export function WebsiteCard({ website, priority = false }: WebsiteCardProps) {
   const IconComponent = iconMap[website.category_icon || ""] || LayoutGrid;
+
+  const [imageError, setImageError] = useState(false);
 
   const tags = parseTags(website.tags);
   const isFeatured = website.featured === 1 || website.featured === true;
@@ -119,6 +122,11 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
     [website.id, website.url]
   );
 
+  const handleImageError = useCallback(() => {
+    console.error("Image load error for:", website.title, "Path:", imageSrc);
+    setImageError(true);
+  }, [website.title, imageSrc]);
+
   return (
     <Card className="group relative overflow-hidden border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50 transition-all duration-300 hover:-translate-y-1">
       {/* Featured Badge */}
@@ -138,17 +146,14 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
             src={imageSrc}
             alt={website.title}
             fill
+            quality={70}
             className="object-cover transition-transform duration-500 group-hover:scale-110"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={(e) => {
-              console.error(
-                "Image load error for:",
-                website.title,
-                "Path:",
-                imageSrc
-              );
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
+            // BARU: Tambahkan placeholder dan priority
+            placeholder="empty"
+            priority={priority}
+            // PERUBAHAN: Gunakan fungsi error handler yang baru
+            onError={handleImageError}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">

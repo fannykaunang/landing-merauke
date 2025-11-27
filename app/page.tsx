@@ -5,7 +5,7 @@ import HomeClient from "./home-client";
 
 export async function generateMetadata() {
   return generatePageMetadata({
-    title: "Beranda",
+    title: "Pemerintah Kabupaten Merauke",
     path: "/",
   });
 }
