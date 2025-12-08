@@ -53,6 +53,12 @@ export async function sendOTPEmail(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kode OTP</title>
+  <style>
+    a, a:hover, a:active, a:visited {
+      color: #ffffff !important;
+      text-decoration: none !important;
+    }
+  </style>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fb;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -65,8 +71,8 @@ export async function sendOTPEmail(
               <div style="display: inline-block; padding: 12px; background-color: rgba(255, 255, 255, 0.2); border-radius: 12px; margin-bottom: 16px;">
                 <img width="50" height="50" src="https://izakod-asn.merauke.go.id/Lambang_Kabupaten_Merauke.png">
               </div>
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
-                merauke.go.id
+              <h1 style="margin: 0; color: rgba(255, 255, 255, 0.9); font-size: 24px; font-weight: 700;">
+                merauke&#8203;.go&#8203;.id
               </h1>
               <p style="margin: 8px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">
                 Kabupaten Merauke
@@ -197,7 +203,7 @@ export async function sendLoginNotificationEmail(
           <tr>
             <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); border-radius: 16px 16px 0 0;">
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
-                merauke.go.id
+                merauke&#8203;.go&#8203;.id
               </h1>
             </td>
           </tr>
