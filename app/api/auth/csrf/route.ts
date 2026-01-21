@@ -1,5 +1,4 @@
 // app/api/auth/csrf/route.ts
-// ✅ FIXED: Add maxAge parameter to setCsrfTokenCookie
 
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";

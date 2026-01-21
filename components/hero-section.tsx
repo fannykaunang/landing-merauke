@@ -22,7 +22,8 @@ export function HeroSection({
   return (
     <section
       id="beranda"
-      className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      className="relative min-h-[90vh] flex items-center justify-center overflow-hidden"
+    >
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" />
 
@@ -51,7 +52,10 @@ export function HeroSection({
               Aplikasi
             </span>
             <br />
-            Kabupaten Merauke
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-500 to-orange-500">
+              {" "}
+              Kabupaten Merauke
+            </span>
           </h1>
 
           {/* Description */}
@@ -76,7 +80,8 @@ export function HeroSection({
               </div>
               <Button
                 onClick={onSearch}
-                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg shadow-blue-500/25">
+                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg shadow-blue-500/25"
+              >
                 <span className="hidden sm:inline mr-2">Cari</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>

@@ -70,7 +70,6 @@ export async function generatePageMetadata(
       metadataBase: new URL(baseUrl),
       description,
       keywords,
-
       authors: [
         {
           name: settings?.copyright || "Pemerintah Kabupaten Merauke",
